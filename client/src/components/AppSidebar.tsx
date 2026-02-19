@@ -56,9 +56,8 @@ export function AppSidebar() {
       className="fixed left-0 top-0 bottom-0 w-[240px] bg-sidebar border-r border-sidebar-border flex flex-col z-50"
       data-testid="sidebar"
     >
-      <div className="p-5 flex items-center gap-3">
+      <div className="p-5">
         <img src="/logo-fideltour.png" alt="Fideltour" className="h-7 brightness-0 invert" data-testid="img-logo" />
-        <div className="text-sidebar-foreground/50 text-[10px] font-medium uppercase tracking-widest">GTM Cockpit</div>
       </div>
 
       <div className="px-3 mb-2" ref={dropdownRef}>
@@ -114,7 +113,7 @@ export function AppSidebar() {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
                   active
                     ? "bg-sidebar-primary/20 text-sidebar-primary"
-                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                    : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                 }`}
                 data-testid={`nav-${item.label.toLowerCase().replace(/\s/g, "-")}`}
               >
@@ -145,7 +144,7 @@ export function AppSidebar() {
       <div className="p-4 border-t border-sidebar-border">
         <button
           onClick={toggleTheme}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
           data-testid="button-theme-toggle"
         >
           {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
