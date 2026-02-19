@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Linkedin, MessageCircle, Send, CheckCircle, ArrowRightCircle, AlertTriangle, Ban, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { conversations } from "@/lib/mockData";
+import { useRegionContext } from "@/contexts/RegionContext";
+import { getConversationsByZone } from "@/lib/zoneFilters";
 
 function channelIcon(channel: string) {
   switch (channel) {
@@ -28,11 +29,18 @@ function cvColor(value: number) {
 }
 
 export default function Unibox() {
-  const [selectedId, setSelectedId] = useState(conversations[0]?.id);
+  const { region, currentZone } = useRegionContext();
+  const zoneConversations = getConversationsByZone(region);
+  const [selectedId, setSelectedId] = useState(zoneConversations[0]?.id);
   const [filter, setFilter] = useState<"all" | "unread" | "action" | "handled">("all");
-  const selected = conversations.find((c) => c.id === selectedId);
 
-  const filtered = conversations.filter((c) => {
+  useEffect(() => {
+    setSelectedId(zoneConversations[0]?.id);
+  }, [region]);
+
+  const selected = zoneConversations.find((c) => c.id === selectedId);
+
+  const filtered = zoneConversations.filter((c) => {
     if (filter === "unread") return c.unread;
     if (filter === "action") return c.requiresAction;
     if (filter === "handled") return !c.requiresAction && !c.unread;
@@ -40,15 +48,17 @@ export default function Unibox() {
   });
 
   const tabs = [
-    { key: "all" as const, label: "Todos", count: conversations.length },
-    { key: "unread" as const, label: "No leídos", count: conversations.filter((c) => c.unread).length },
-    { key: "action" as const, label: "Requiere Acción", count: conversations.filter((c) => c.requiresAction).length },
+    { key: "all" as const, label: "Todos", count: zoneConversations.length },
+    { key: "unread" as const, label: "No leídos", count: zoneConversations.filter((c) => c.unread).length },
+    { key: "action" as const, label: "Requiere Acción", count: zoneConversations.filter((c) => c.requiresAction).length },
     { key: "handled" as const, label: "Gestionados", count: 0 },
   ];
 
   return (
     <div className="p-6 h-screen max-w-[1400px] mx-auto">
-      <h1 className="text-xl font-semibold text-foreground mb-5" data-testid="text-page-title">Unified Inbox</h1>
+      <h1 className="text-xl font-semibold text-foreground mb-5" data-testid="text-page-title">
+        Unified Inbox {currentZone ? `- ${currentZone.name}` : ""}
+      </h1>
       <div className="grid grid-cols-5 gap-4 h-[calc(100%-70px)]">
         <div className="col-span-2 flex flex-col">
           <div className="flex items-center gap-1 mb-3 flex-wrap">

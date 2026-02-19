@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cadences } from "@/lib/mockData";
 import type { CadenceStep } from "@/lib/mockData";
+import { useRegionContext } from "@/contexts/RegionContext";
 
 function stepIcon(type: string) {
   switch (type) {
@@ -74,11 +75,14 @@ function StepCard({ step, isLast }: { step: CadenceStep; isLast: boolean }) {
 }
 
 export default function Cadences() {
+  const { currentZone } = useRegionContext();
   const [selectedCadence, setSelectedCadence] = useState(cadences[0]);
 
   return (
     <div className="p-6 h-[calc(100vh-0px)] max-w-[1400px] mx-auto">
-      <h1 className="text-xl font-semibold text-foreground mb-5" data-testid="text-page-title">Cadencias</h1>
+      <h1 className="text-xl font-semibold text-foreground mb-5" data-testid="text-page-title">
+        Cadencias {currentZone ? `- ${currentZone.name}` : ""}
+      </h1>
       <div className="grid grid-cols-3 gap-5 h-[calc(100%-60px)]">
         <div className="col-span-1 space-y-3 overflow-y-auto pr-1">
           <Button

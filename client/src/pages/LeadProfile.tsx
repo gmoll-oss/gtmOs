@@ -1,8 +1,9 @@
 import { useRoute, useLocation } from "wouter";
-import { ArrowLeft, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, Bot, RefreshCw, Plus, Calendar, Ban, ArrowRightCircle, Pause, Pencil } from "lucide-react";
+import { ArrowLeft, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, Bot, RefreshCw, Plus, Calendar, Ban, ArrowRightCircle, Pause, Pencil, Globe } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { hotels } from "@/lib/mockData";
+import { getZoneByCountry } from "@/lib/zones";
 
 function ScoreCircle({ score, max }: { score: number; max: number }) {
   const pct = (score / max) * 100;
@@ -119,6 +120,16 @@ export default function LeadProfile() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Ingresos anuales est.</span><span className="text-foreground/80">{hotel.annualRevenue}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">TripAdvisor</span><span className="text-foreground/80">{hotel.tripAdvisorRating}/5</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Booking</span><span className="text-foreground/80">{hotel.bookingRating}/10</span></div>
+                {(() => {
+                  const zone = getZoneByCountry(hotel.country);
+                  if (!zone) return null;
+                  return (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Embajador</span>
+                      <span className="text-xs font-medium text-primary">{zone.ambassador.name}</span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </Card>

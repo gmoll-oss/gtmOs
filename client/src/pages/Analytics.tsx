@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { analyticsData } from "@/lib/mockData";
 import { ArrowUpRight, ArrowDownRight, ChevronDown } from "lucide-react";
+import { useRegionContext } from "@/contexts/RegionContext";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
@@ -40,10 +41,14 @@ const tickStyle = { fontSize: 11, fill: "hsl(var(--muted-foreground))" };
 const gridStroke = "hsl(var(--border))";
 
 export default function Analytics() {
+  const { currentZone } = useRegionContext();
+
   return (
     <div className="p-6 space-y-5 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl font-semibold text-foreground" data-testid="text-page-title">GTM Analytics</h1>
+        <h1 className="text-xl font-semibold text-foreground" data-testid="text-page-title">
+          GTM Analytics {currentZone ? `- ${currentZone.name}` : ""}
+        </h1>
         <div className="flex items-center gap-2">
           <div className="relative">
             <select className="appearance-none bg-card border border-border text-foreground text-xs rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-1 focus:ring-primary" data-testid="select-date-range">

@@ -22,11 +22,15 @@ GTM Cockpit is a B2B SaaS web application for Fideltour, specializing in CRM and
 6. **Analytics** (`/analytics`) - Charts and KPI tables for GTM metrics
 
 ## Key Files
-- `client/src/lib/mockData.ts` - All mock data (20 hotels, 4 cadences, 7 conversations, analytics)
-- `client/src/components/AppSidebar.tsx` - Fixed left sidebar navigation with theme toggle
+- `client/src/lib/mockData.ts` - All mock data (25 hotels, 5 cadences, 9 conversations, analytics)
+- `client/src/lib/zones.ts` - Zone definitions with ambassadors (España, México, Colombia, Portugal)
+- `client/src/contexts/RegionContext.tsx` - Region context for zone selection (persisted in localStorage as "gtm-region")
+- `client/src/hooks/useRegion.ts` - Hook for accessing region context
+- `client/src/lib/zoneFilters.ts` - Helper functions for filtering data by zone
+- `client/src/components/AppSidebar.tsx` - Fixed left sidebar with zone selector, theme toggle
 - `client/src/hooks/useTheme.ts` - Light/dark mode toggle hook (persisted in localStorage)
 - `client/src/pages/` - All 6 page components
-- `client/src/App.tsx` - Router and layout
+- `client/src/App.tsx` - Router and layout with RegionProvider
 
 ## Design System
 - Light/dark theme toggle (default: dark, persisted in localStorage as "gtm-theme")
@@ -37,7 +41,17 @@ GTM Cockpit is a B2B SaaS web application for Fideltour, specializing in CRM and
 - Desktop only (min-width 1280px)
 - No authentication
 
+## Regional Zones
+4 zones with dedicated ambassadors:
+- **España** (ES) - Ambassador: Federico Cifre
+- **México** (MX) - Ambassador: Juan José Da Silva
+- **Colombia** (CO) - Ambassador: Daniela Jiménez (also covers Peru, Panama)
+- **Portugal** (PT) - Ambassador: Joao Freitas
+Zone selector in sidebar filters all pages by region. "Todas las Regiones" shows all data.
+
 ## Recent Changes
+- 2026-02-19: Added regional zone system with 4 zones, ambassadors, and zone-filtered views
+- 2026-02-19: Added 5 Portugal hotels, Portugal cadence, and Portugal conversations to mock data
 - 2026-02-19: Removed "Pedro Atienza" user section from sidebar
 - 2026-02-19: Added light/dark mode toggle in sidebar bottom
 - 2026-02-19: Migrated all pages from hardcoded dark hex colors to semantic Tailwind CSS tokens

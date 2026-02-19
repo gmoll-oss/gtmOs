@@ -3,9 +3,9 @@ import { useLocation } from "wouter";
 import { Search, RotateCcw, Upload, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { hotels } from "@/lib/mockData";
+import { useRegionContext } from "@/contexts/RegionContext";
+import { getHotelsByZone } from "@/lib/zoneFilters";
 
-const countries = ["Todos", "Spain", "Mexico", "Colombia", "Panama", "Peru"];
 const categories = ["3", "4", "5", "GL"];
 const types = ["Boutique", "Urban", "Resort", "Rural"];
 
@@ -41,6 +41,10 @@ function cvBadge(value: number) {
 
 export default function HotelDatabase() {
   const [, navigate] = useLocation();
+  const { region, currentZone } = useRegionContext();
+  const zoneHotels = getHotelsByZone(region);
+  const availableCountries = Array.from(new Set(zoneHotels.map((h) => h.country))).sort();
+
   const [selectedCountry, setSelectedCountry] = useState("Todos");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -54,7 +58,7 @@ export default function HotelDatabase() {
     setSelectedTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
   };
 
-  const filtered = hotels.filter((h) => {
+  const filtered = zoneHotels.filter((h) => {
     if (selectedCountry !== "Todos" && h.country !== selectedCountry) return false;
     if (selectedCategories.length > 0 && !selectedCategories.includes(h.category)) return false;
     if (selectedTypes.length > 0 && !selectedTypes.includes(h.type)) return false;
@@ -85,8 +89,10 @@ export default function HotelDatabase() {
     <div className="p-6 space-y-5 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-foreground" data-testid="text-page-title">Hotel Database</h1>
-          <span className="text-xs font-medium bg-card text-muted-foreground px-2.5 py-1 rounded-md border border-border">847 hoteles</span>
+          <h1 className="text-xl font-semibold text-foreground" data-testid="text-page-title">
+            Hotel Database {currentZone ? `- ${currentZone.name}` : ""}
+          </h1>
+          <span className="text-xs font-medium bg-card text-muted-foreground px-2.5 py-1 rounded-md border border-border">{zoneHotels.length} hoteles</span>
         </div>
         <Button variant="outline" className="text-xs gap-1.5" data-testid="button-import">
           <Upload className="w-3.5 h-3.5" />
@@ -96,19 +102,23 @@ export default function HotelDatabase() {
 
       <Card className="p-4">
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative">
-            <select
-              value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
-              className="appearance-none bg-background border border-border text-foreground text-xs rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-1 focus:ring-primary"
-              data-testid="select-country"
-            >
-              {countries.map((c) => <option key={c} value={c}>{c === "Todos" ? "País" : c}</option>)}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          </div>
-
-          <div className="h-5 w-[1px] bg-border" />
+          {region === "todas" && (
+            <>
+              <div className="relative">
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                  className="appearance-none bg-background border border-border text-foreground text-xs rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-1 focus:ring-primary"
+                  data-testid="select-country"
+                >
+                  <option value="Todos">País</option>
+                  {availableCountries.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              </div>
+              <div className="h-5 w-[1px] bg-border" />
+            </>
+          )}
 
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-1">Cat:</span>
@@ -243,19 +253,13 @@ export default function HotelDatabase() {
           </table>
         </div>
         <div className="flex items-center justify-between p-3 border-t border-border">
-          <span className="text-xs text-muted-foreground">Mostrando 1-{filtered.length} de 847 resultados</span>
+          <span className="text-xs text-muted-foreground">Mostrando {filtered.length} de {zoneHotels.length} hoteles</span>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" className="w-7 h-7">
               <ChevronLeft className="w-3.5 h-3.5" />
             </Button>
             <Button variant="outline" size="icon" className="bg-primary/15 border-primary/30 w-7 h-7">
               <span className="text-xs text-primary">1</span>
-            </Button>
-            <Button variant="outline" size="icon" className="w-7 h-7">
-              <span className="text-xs text-muted-foreground">2</span>
-            </Button>
-            <Button variant="outline" size="icon" className="w-7 h-7">
-              <span className="text-xs text-muted-foreground">3</span>
             </Button>
             <Button variant="outline" size="icon" className="w-7 h-7">
               <ChevronRight className="w-3.5 h-3.5" />

@@ -1,6 +1,8 @@
-import { ArrowUpRight, ArrowDownRight, Mail, Linkedin, Sparkles, Target, CheckCircle2, AlertCircle, Clock, Zap } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Mail, Linkedin, Sparkles, Target, CheckCircle2, AlertCircle, Clock, Zap, User } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { sparklineData, funnelData, recentActivity } from "@/lib/mockData";
+import { useRegionContext } from "@/contexts/RegionContext";
+import { getHotelsByZone, getZoneStats } from "@/lib/zoneFilters";
 import { LineChart, Line } from "recharts";
 
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
@@ -13,13 +15,6 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
     </div>
   );
 }
-
-const kpiCards = [
-  { label: "Traffic", value: "1,240", change: "+8%", up: true, color: "#F59E0B", sparkline: sparklineData.traffic },
-  { label: "Leads", value: "387", change: "+31%", up: true, color: "#EC4899", sparkline: sparklineData.leads },
-  { label: "MQLs", value: "94", change: "+24%", up: true, color: "#8B5CF6", sparkline: sparklineData.mqls },
-  { label: "SQLs", value: "18", change: "+19%", up: true, color: "#10B981", sparkline: sparklineData.sqls },
-];
 
 const tasks = [
   { icon: AlertCircle, text: "2 leads respondieron - acción requerida", badge: "Urgente", badgeColor: "bg-red-500/15 text-red-400 dark:text-red-400", iconColor: "text-red-400 dark:text-red-400" },
@@ -41,15 +36,51 @@ function activityIcon(type: string) {
 
 export default function Dashboard() {
   const today = new Date().toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const { region, currentZone } = useRegionContext();
+  const stats = getZoneStats(region);
+  const zoneHotels = getHotelsByZone(region);
+
+  const sqlCount = stats.sqls;
+  const sqlTarget = region === "todas" ? 10 : Math.max(3, Math.ceil(stats.totalHotels * 0.15));
+  const sqlPct = Math.min(100, Math.round((sqlCount / sqlTarget) * 100));
+
+  const kpiCards = [
+    { label: "Hoteles", value: stats.totalHotels.toString(), change: "+8%", up: true, color: "#F59E0B", sparkline: sparklineData.traffic },
+    { label: "En Cadencia", value: stats.inCadence.toString(), change: "+31%", up: true, color: "#EC4899", sparkline: sparklineData.leads },
+    { label: "Nurturing", value: stats.nurturing.toString(), change: "+24%", up: true, color: "#8B5CF6", sparkline: sparklineData.mqls },
+    { label: "SQLs", value: stats.sqls.toString(), change: "+19%", up: true, color: "#10B981", sparkline: sparklineData.sqls },
+  ];
+
+  const zoneFunnel = [
+    { stage: "Total", count: stats.totalHotels, color: "#6366F1" },
+    { stage: "En Cadencia", count: stats.inCadence, rate: stats.totalHotels > 0 ? `${Math.round((stats.inCadence / stats.totalHotels) * 100)}%` : "0%", color: "#8B5CF6" },
+    { stage: "Nurturing", count: stats.nurturing, rate: stats.inCadence > 0 ? `${Math.round((stats.nurturing / stats.inCadence) * 100)}%` : "0%", color: "#A78BFA" },
+    { stage: "SQL", count: stats.sqls, rate: stats.nurturing > 0 ? `${Math.round((stats.sqls / stats.nurturing) * 100)}%` : "0%", color: "#10B981" },
+  ];
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-foreground" data-testid="text-page-title">GTM Dashboard</h1>
+          <h1 className="text-xl font-semibold text-foreground" data-testid="text-page-title">
+            {currentZone ? `Dashboard - ${currentZone.name}` : "GTM Dashboard"}
+          </h1>
           <p className="text-sm text-muted-foreground mt-0.5 capitalize">{today}</p>
         </div>
-        <span className="text-xs font-medium bg-primary/15 text-primary px-3 py-1.5 rounded-md" data-testid="badge-fideltour">Fideltour</span>
+        <div className="flex items-center gap-3">
+          {currentZone && (
+            <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5" data-testid="badge-ambassador">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                <User className="w-3 h-3 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground leading-tight">Embajador</p>
+                <p className="text-xs font-medium text-primary leading-tight">{currentZone.ambassador.name}</p>
+              </div>
+            </div>
+          )}
+          <span className="text-xs font-medium bg-primary/15 text-primary px-3 py-1.5 rounded-md" data-testid="badge-fideltour">Fideltour</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-4" data-testid="kpi-cards">
@@ -71,9 +102,9 @@ export default function Dashboard() {
       </div>
 
       <Card className="p-5" data-testid="pipeline-funnel">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Pipeline</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-4">Pipeline {currentZone ? `- ${currentZone.name}` : ""}</h2>
         <div className="flex items-center justify-between">
-          {funnelData.map((stage, i) => (
+          {(region === "todas" ? funnelData : zoneFunnel).map((stage, i, arr) => (
             <div key={stage.stage} className="flex items-center">
               <div className="text-center">
                 <div
@@ -84,9 +115,9 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground mt-0.5">{stage.stage}</p>
                 </div>
               </div>
-              {i < funnelData.length - 1 && (
+              {i < arr.length - 1 && (
                 <div className="flex flex-col items-center mx-2">
-                  <div className="text-[10px] font-medium text-muted-foreground mb-0.5">{funnelData[i + 1].rate}</div>
+                  <div className="text-[10px] font-medium text-muted-foreground mb-0.5">{arr[i + 1].rate || ""}</div>
                   <div className="w-8 h-[1px] bg-border" />
                   <svg className="w-2 h-2 text-border -mt-0.5" viewBox="0 0 8 8">
                     <path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
@@ -133,39 +164,39 @@ export default function Dashboard() {
 
         <div className="space-y-4">
           <Card className="p-5" data-testid="sql-target">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Objetivo SQL Semanal</h2>
+            <h2 className="text-sm font-semibold text-foreground mb-3">Objetivo SQL {currentZone ? currentZone.name : "Semanal"}</h2>
             <div className="text-center py-4">
-              <p className="text-4xl font-bold text-foreground">8<span className="text-lg text-muted-foreground">/10</span></p>
-              <p className="text-sm text-muted-foreground mt-1">SQLs esta semana</p>
+              <p className="text-4xl font-bold text-foreground">{sqlCount}<span className="text-lg text-muted-foreground">/{sqlTarget}</span></p>
+              <p className="text-sm text-muted-foreground mt-1">SQLs {currentZone ? "en esta región" : "esta semana"}</p>
             </div>
             <div className="w-full bg-background rounded-full h-2 mt-2">
-              <div className="h-2 rounded-full bg-gradient-to-r from-[#6366F1] to-[#10B981]" style={{ width: "80%" }} />
+              <div className="h-2 rounded-full bg-gradient-to-r from-[#6366F1] to-[#10B981]" style={{ width: `${sqlPct}%` }} />
             </div>
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 text-center font-medium">80% del objetivo alcanzado</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 text-center font-medium">{sqlPct}% del objetivo alcanzado</p>
           </Card>
 
           <Card className="p-5" data-testid="quick-stats">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Resumen Rápido</h2>
+            <h2 className="text-sm font-semibold text-foreground mb-3">Resumen {currentZone ? currentZone.name : "Rápido"}</h2>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Tasa Respuesta</span>
-                <span className="text-sm font-medium text-foreground">14.2%</span>
+                <span className="text-xs text-muted-foreground">ICP Medio</span>
+                <span className="text-sm font-medium text-foreground">{stats.avgIcp}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Emails Hoy</span>
-                <span className="text-sm font-medium text-foreground">45</span>
+                <span className="text-xs text-muted-foreground">CV Medio</span>
+                <span className="text-sm font-medium text-foreground">{stats.avgCv}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">LinkedIn Hoy</span>
-                <span className="text-sm font-medium text-foreground">12</span>
+                <span className="text-xs text-muted-foreground">Nuevos</span>
+                <span className="text-sm font-medium text-foreground">{stats.newLeads}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs text-muted-foreground">Leads Activos</span>
-                <span className="text-sm font-medium text-foreground">183</span>
+                <span className="text-sm font-medium text-foreground">{stats.inCadence + stats.nurturing}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Tiempo Medio Resp.</span>
-                <span className="text-sm font-medium text-foreground">2.4h</span>
+                <span className="text-xs text-muted-foreground">Total Hoteles</span>
+                <span className="text-sm font-medium text-foreground">{stats.totalHotels}</span>
               </div>
             </div>
           </Card>
