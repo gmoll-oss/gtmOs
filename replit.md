@@ -35,9 +35,14 @@ GTM Cockpit is a B2B SaaS web application for Fideltour, specializing in CRM and
 ## Design System
 - Light/dark theme toggle (default: dark, persisted in localStorage as "gtm-theme")
 - Uses semantic CSS tokens (bg-background, bg-card, text-foreground, text-muted-foreground, border-border, etc.)
-- Primary accent: indigo (--primary CSS variable)
+- Branding: Fideltour (www.fideltour.com)
+- Primary accent: teal #25CAD2 (--primary CSS variable)
+- Navy: #00395E (sidebar background in light mode, chart accents)
+- Sidebar: always dark navy (#00395E family) regardless of theme, uses sidebar-* tokens
 - Status colors: emerald (success), amber (warning), red (danger) - consistent across themes
-- Font: Inter
+- Fonts: Plus Jakarta Sans (body, --font-sans), Nunito (--font-serif for headings), Fira Code (mono)
+- Logo: /logo-fideltour.png (white logo inverted for dark sidebar)
+- Favicon: /favicon.png (Fideltour favicon)
 - Desktop only (min-width 1280px)
 - No authentication
 
@@ -50,6 +55,9 @@ GTM Cockpit is a B2B SaaS web application for Fideltour, specializing in CRM and
 Zone selector in sidebar filters all pages by region. "Todas las Regiones" shows all data.
 
 ## Recent Changes
+- 2026-02-19: Applied Fideltour branding: teal/navy color palette, Plus Jakarta Sans + Nunito fonts, logo, favicon
+- 2026-02-19: Sidebar now always dark navy with teal accent, matching fideltour.com branding
+- 2026-02-19: Updated all chart colors across Dashboard and Analytics to use brand teal/navy palette
 - 2026-02-19: Added regional zone system with 4 zones, ambassadors, and zone-filtered views
 - 2026-02-19: Added 5 Portugal hotels, Portugal cadence, and Portugal conversations to mock data
 - 2026-02-19: Removed "Pedro Atienza" user section from sidebar

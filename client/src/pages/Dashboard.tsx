@@ -45,16 +45,16 @@ export default function Dashboard() {
   const sqlPct = Math.min(100, Math.round((sqlCount / sqlTarget) * 100));
 
   const kpiCards = [
-    { label: "Hoteles", value: stats.totalHotels.toString(), change: "+8%", up: true, color: "#F59E0B", sparkline: sparklineData.traffic },
-    { label: "En Cadencia", value: stats.inCadence.toString(), change: "+31%", up: true, color: "#EC4899", sparkline: sparklineData.leads },
-    { label: "Nurturing", value: stats.nurturing.toString(), change: "+24%", up: true, color: "#8B5CF6", sparkline: sparklineData.mqls },
+    { label: "Hoteles", value: stats.totalHotels.toString(), change: "+8%", up: true, color: "#00395E", sparkline: sparklineData.traffic },
+    { label: "En Cadencia", value: stats.inCadence.toString(), change: "+31%", up: true, color: "#25CAD2", sparkline: sparklineData.leads },
+    { label: "Nurturing", value: stats.nurturing.toString(), change: "+24%", up: true, color: "#0E8A8F", sparkline: sparklineData.mqls },
     { label: "SQLs", value: stats.sqls.toString(), change: "+19%", up: true, color: "#10B981", sparkline: sparklineData.sqls },
   ];
 
   const zoneFunnel = [
-    { stage: "Total", count: stats.totalHotels, color: "#6366F1" },
-    { stage: "En Cadencia", count: stats.inCadence, rate: stats.totalHotels > 0 ? `${Math.round((stats.inCadence / stats.totalHotels) * 100)}%` : "0%", color: "#3B82F6" },
-    { stage: "Nurturing", count: stats.nurturing, rate: stats.inCadence > 0 ? `${Math.round((stats.nurturing / stats.inCadence) * 100)}%` : "0%", color: "#F59E0B" },
+    { stage: "Total", count: stats.totalHotels, color: "#00395E" },
+    { stage: "En Cadencia", count: stats.inCadence, rate: stats.totalHotels > 0 ? `${Math.round((stats.inCadence / stats.totalHotels) * 100)}%` : "0%", color: "#25CAD2" },
+    { stage: "Nurturing", count: stats.nurturing, rate: stats.inCadence > 0 ? `${Math.round((stats.nurturing / stats.inCadence) * 100)}%` : "0%", color: "#0E8A8F" },
     { stage: "SQL", count: stats.sqls, rate: stats.nurturing > 0 ? `${Math.round((stats.sqls / stats.nurturing) * 100)}%` : "0%", color: "#10B981" },
   ];
 

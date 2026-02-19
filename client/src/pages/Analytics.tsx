@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { analyticsData } from "@/lib/mockData";
 import { ArrowUpRight, ArrowDownRight, ChevronDown } from "lucide-react";
 import { useRegionContext } from "@/contexts/RegionContext";
+import { useTheme } from "@/hooks/useTheme";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
@@ -42,6 +43,10 @@ const gridStroke = "hsl(var(--border))";
 
 export default function Analytics() {
   const { currentZone } = useRegionContext();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const brandNavy = isDark ? "#4DA8D0" : "#00395E";
+  const brandTeal = isDark ? "#30DDE5" : "#25CAD2";
 
   return (
     <div className="p-6 space-y-5 max-w-[1400px] mx-auto">
@@ -89,7 +94,7 @@ export default function Analytics() {
               <XAxis type="number" tick={tickStyle} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="name" tick={tickStyle} axisLine={false} tickLine={false} width={140} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="rate" fill="#6366F1" radius={[0, 4, 4, 0]} name="Tasa Respuesta" />
+              <Bar dataKey="rate" fill={brandTeal} radius={[0, 4, 4, 0]} name="Tasa Respuesta" />
             </BarChart>
           </ResponsiveContainer>
         </Card>
@@ -132,7 +137,7 @@ export default function Analytics() {
               <XAxis dataKey="range" tick={tickStyle} axisLine={false} tickLine={false} />
               <YAxis tick={tickStyle} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Leads" />
+              <Bar dataKey="count" fill={brandNavy} radius={[4, 4, 0, 0]} name="Leads" />
             </BarChart>
           </ResponsiveContainer>
         </Card>

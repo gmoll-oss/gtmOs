@@ -1269,8 +1269,8 @@ export const analyticsData = {
     { name: "Recycled Q4 2025", rate: 8.1 },
   ],
   channelEffectiveness: [
-    { name: "Email", value: 12.3, color: "#6366F1" },
-    { name: "LinkedIn", value: 31.4, color: "#3B82F6" },
+    { name: "Email", value: 12.3, color: "#00395E" },
+    { name: "LinkedIn", value: 31.4, color: "#25CAD2" },
     { name: "WhatsApp", value: 47.2, color: "#10B981" },
   ],
   contactValueDistribution: [
