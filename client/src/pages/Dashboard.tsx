@@ -103,22 +103,20 @@ export default function Dashboard() {
 
       <Card className="p-5" data-testid="pipeline-funnel">
         <h2 className="text-sm font-semibold text-foreground mb-4">Pipeline {currentZone ? `- ${currentZone.name}` : ""}</h2>
-        <div className="flex items-center gap-2 overflow-x-auto">
+        <div className="flex items-center gap-1">
           {(region === "todas" ? funnelData : zoneFunnel).map((stage, i, arr) => (
-            <div key={stage.stage} className="flex items-center flex-shrink-0">
-              <div className="text-center">
-                <div
-                  className="rounded-lg px-4 py-3 min-w-[110px]"
-                  style={{ backgroundColor: `${stage.color}15`, border: `1px solid ${stage.color}30` }}
-                >
-                  <p className="text-lg font-bold text-foreground">{stage.count}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{stage.stage}</p>
-                </div>
+            <div key={stage.stage} className="flex items-center flex-1 min-w-0">
+              <div
+                className="rounded-lg py-3 w-full text-center"
+                style={{ backgroundColor: `${stage.color}15`, border: `1px solid ${stage.color}30` }}
+              >
+                <p className="text-lg font-bold text-foreground">{stage.count}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{stage.stage}</p>
               </div>
               {i < arr.length - 1 && (
-                <div className="flex flex-col items-center mx-1.5 flex-shrink-0">
+                <div className="flex flex-col items-center mx-1 flex-shrink-0">
                   <div className="text-[10px] font-medium text-muted-foreground mb-0.5">{arr[i + 1].rate || ""}</div>
-                  <div className="w-6 h-[1px] bg-border" />
+                  <div className="w-5 h-[1px] bg-border" />
                   <svg className="w-2 h-2 text-border -mt-0.5" viewBox="0 0 8 8">
                     <path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
                   </svg>
