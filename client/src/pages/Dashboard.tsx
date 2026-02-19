@@ -103,29 +103,40 @@ export default function Dashboard() {
 
       <Card className="p-5" data-testid="pipeline-funnel">
         <h2 className="text-sm font-semibold text-foreground mb-4">Pipeline {currentZone ? `- ${currentZone.name}` : ""}</h2>
-        <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-1">
-          {(region === "todas" ? funnelData : zoneFunnel).map((stage, i, arr) => (
-            <>
-              <div
-                key={stage.stage}
-                className="rounded-lg py-3 text-center"
-                style={{ backgroundColor: `${stage.color}15`, border: `1px solid ${stage.color}30` }}
-              >
-                <p className="text-lg font-bold text-foreground">{stage.count}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{stage.stage}</p>
-              </div>
-              {i < arr.length - 1 && (
-                <div key={`arrow-${i}`} className="flex flex-col items-center px-0.5">
-                  <div className="text-[10px] font-medium text-muted-foreground mb-0.5">{arr[i + 1].rate || ""}</div>
-                  <div className="w-5 h-[1px] bg-border" />
-                  <svg className="w-2 h-2 text-border -mt-0.5" viewBox="0 0 8 8">
-                    <path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
-                  </svg>
-                </div>
+        {(() => {
+          const stages = region === "todas" ? funnelData : zoneFunnel;
+          const items: { type: "stage"; stage: typeof stages[0] }[] | { type: "arrow"; rate: string }[] = [];
+          const flat: ({ type: "stage"; stage: typeof stages[0] } | { type: "arrow"; rate: string })[] = [];
+          stages.forEach((s, i) => {
+            flat.push({ type: "stage", stage: s });
+            if (i < stages.length - 1) flat.push({ type: "arrow", rate: stages[i + 1].rate || "" });
+          });
+          const cols = stages.map(() => "1fr").join("_auto_").replace(/_/g, " ");
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", gap: "4px" }}>
+              {flat.map((item, idx) =>
+                item.type === "stage" ? (
+                  <div
+                    key={`s-${idx}`}
+                    className="rounded-lg py-3 text-center"
+                    style={{ backgroundColor: `${item.stage.color}15`, border: `1px solid ${item.stage.color}30` }}
+                  >
+                    <p className="text-lg font-bold text-foreground">{item.stage.count}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.stage.stage}</p>
+                  </div>
+                ) : (
+                  <div key={`a-${idx}`} className="flex flex-col items-center px-0.5">
+                    <div className="text-[10px] font-medium text-muted-foreground mb-0.5">{item.rate}</div>
+                    <div className="w-5 h-[1px] bg-border" />
+                    <svg className="w-2 h-2 text-border -mt-0.5" viewBox="0 0 8 8">
+                      <path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
+                    </svg>
+                  </div>
+                )
               )}
-            </>
-          ))}
-        </div>
+            </div>
+          );
+        })()}
       </Card>
 
       <div className="grid grid-cols-3 gap-4">
