@@ -103,39 +103,88 @@ export default function Dashboard() {
 
       <Card className="p-5" data-testid="pipeline-funnel">
         <h2 className="text-sm font-semibold text-foreground mb-4">Pipeline {currentZone ? `- ${currentZone.name}` : ""}</h2>
-        <div className="space-y-0">
-          {(region === "todas" ? funnelData : zoneFunnel).map((stage, i, arr) => {
-            const maxCount = arr[0].count || 1;
-            const widthPct = Math.max(((stage.count / maxCount) * 100), 25);
-            return (
-              <div key={stage.stage} className="flex flex-col items-center">
-                <div
-                  className="relative flex items-center justify-between px-4 py-3"
-                  style={{
-                    width: `${widthPct}%`,
-                    backgroundColor: `${stage.color}15`,
-                    borderLeft: `2px solid ${stage.color}50`,
-                    borderRight: `2px solid ${stage.color}50`,
-                    borderTop: i === 0 ? `2px solid ${stage.color}50` : "none",
-                    borderBottom: i === arr.length - 1 ? `2px solid ${stage.color}50` : "none",
-                    borderRadius: i === 0 ? "8px 8px 0 0" : i === arr.length - 1 ? "0 0 8px 8px" : "0",
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
-                    <span className="text-sm font-medium text-foreground">{stage.stage}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-foreground">{stage.count}</span>
-                    {i > 0 && stage.rate && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md" style={{ backgroundColor: `${stage.color}20`, color: stage.color }}>{stage.rate}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {(() => {
+          const stages = region === "todas" ? funnelData : zoneFunnel;
+          const total = stages.length;
+          const segH = 56;
+          const svgH = total * segH;
+          const padLeft = 100;
+          const padRight = 100;
+          const svgW = 800;
+          const innerW = svgW - padLeft - padRight;
+
+          return (
+            <div className="w-full" style={{ aspectRatio: `${svgW} / ${svgH}` }}>
+              <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                {stages.map((stage, i) => {
+                  const topWidthPct = 1 - (i / total) * 0.7;
+                  const botWidthPct = 1 - ((i + 1) / total) * 0.7;
+                  const topW = innerW * topWidthPct;
+                  const botW = innerW * botWidthPct;
+                  const cx = svgW / 2;
+                  const y = i * segH;
+
+                  const x1t = cx - topW / 2;
+                  const x2t = cx + topW / 2;
+                  const x1b = cx - botW / 2;
+                  const x2b = cx + botW / 2;
+
+                  const trapezoid = `${x1t},${y} ${x2t},${y} ${x2b},${y + segH} ${x1b},${y + segH}`;
+
+                  return (
+                    <g key={stage.stage}>
+                      <polygon
+                        points={trapezoid}
+                        fill={`${stage.color}18`}
+                        stroke={`${stage.color}40`}
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
+                      />
+                      {i > 0 && (
+                        <line
+                          x1={cx - innerW * (1 - (i / total) * 0.7) / 2}
+                          y1={y}
+                          x2={cx + innerW * (1 - (i / total) * 0.7) / 2}
+                          y2={y}
+                          stroke={`${stage.color}60`}
+                          strokeWidth="1"
+                          strokeDasharray="3,3"
+                        />
+                      )}
+                      <text
+                        x={cx}
+                        y={y + segH / 2 - 6}
+                        textAnchor="middle"
+                        className="fill-foreground text-[15px] font-bold"
+                      >
+                        {stage.count}
+                      </text>
+                      <text
+                        x={cx}
+                        y={y + segH / 2 + 12}
+                        textAnchor="middle"
+                        className="fill-muted-foreground text-[11px]"
+                      >
+                        {stage.stage}
+                      </text>
+                      {i > 0 && stage.rate && (
+                        <text
+                          x={cx + topW / 2 + 8}
+                          y={y + 12}
+                          textAnchor="start"
+                          className="text-[10px] font-medium"
+                          fill={stage.color}
+                        >
+                          {stage.rate}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          );
+        })()}
       </Card>
 
       <div className="grid grid-cols-3 gap-4">
