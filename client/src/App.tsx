@@ -11,7 +11,6 @@ import Cadences from "@/pages/Cadences";
 import Unibox from "@/pages/Unibox";
 import Analytics from "@/pages/Analytics";
 import NotFound from "@/pages/not-found";
-import { useEffect } from "react";
 
 function Router() {
   return (
@@ -28,14 +27,10 @@ function Router() {
 }
 
 function App() {
-  useEffect(() => {
-    document.documentElement.classList.add("dark");
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="flex min-h-screen bg-[#0F1117]">
+        <div className="flex min-h-screen bg-background">
           <AppSidebar />
           <main className="flex-1 ml-[240px] overflow-auto">
             <Router />
