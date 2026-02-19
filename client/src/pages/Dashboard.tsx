@@ -53,8 +53,8 @@ export default function Dashboard() {
 
   const zoneFunnel = [
     { stage: "Total", count: stats.totalHotels, color: "#6366F1" },
-    { stage: "En Cadencia", count: stats.inCadence, rate: stats.totalHotels > 0 ? `${Math.round((stats.inCadence / stats.totalHotels) * 100)}%` : "0%", color: "#8B5CF6" },
-    { stage: "Nurturing", count: stats.nurturing, rate: stats.inCadence > 0 ? `${Math.round((stats.nurturing / stats.inCadence) * 100)}%` : "0%", color: "#A78BFA" },
+    { stage: "En Cadencia", count: stats.inCadence, rate: stats.totalHotels > 0 ? `${Math.round((stats.inCadence / stats.totalHotels) * 100)}%` : "0%", color: "#3B82F6" },
+    { stage: "Nurturing", count: stats.nurturing, rate: stats.inCadence > 0 ? `${Math.round((stats.nurturing / stats.inCadence) * 100)}%` : "0%", color: "#F59E0B" },
     { stage: "SQL", count: stats.sqls, rate: stats.nurturing > 0 ? `${Math.round((stats.sqls / stats.nurturing) * 100)}%` : "0%", color: "#10B981" },
   ];
 

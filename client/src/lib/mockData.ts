@@ -1250,9 +1250,9 @@ export const sparklineData = {
 
 export const funnelData = [
   { stage: "Market Research", count: 847, color: "#6366F1" },
-  { stage: "Enrichment", count: 383, rate: "45%", color: "#8B5CF6" },
-  { stage: "Active Cadence", count: 183, rate: "48%", color: "#A78BFA" },
-  { stage: "Nurturing", count: 68, rate: "37%", color: "#C4B5FD" },
+  { stage: "Enrichment", count: 383, rate: "45%", color: "#3B82F6" },
+  { stage: "Active Cadence", count: 183, rate: "48%", color: "#F59E0B" },
+  { stage: "Nurturing", count: 68, rate: "37%", color: "#F97316" },
   { stage: "SQL", count: 18, rate: "26%", color: "#10B981" },
 ];
 
