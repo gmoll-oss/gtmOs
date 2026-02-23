@@ -80,12 +80,6 @@ export function AppSidebar() {
         {settingsNavItems.map(renderNavItem)}
       </nav>
 
-      <div className="px-3 py-2 border-t border-sidebar-border">
-        <div className="px-3 py-2 rounded-lg bg-sidebar-accent/50">
-          <p className="text-[11px] font-medium text-sidebar-foreground/90">12.000 créditos</p>
-          <p className="text-[10px] text-sidebar-foreground/50">Se renuevan en 7 días</p>
-        </div>
-      </div>
 
       <div className="px-2 pb-3">
         <button
