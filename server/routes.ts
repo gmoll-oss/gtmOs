@@ -122,8 +122,10 @@ function parseNaturalLanguageQuery(query: string): ApolloSearchParams {
 
   const industryKeywords = ["hotel", "hoteles", "resort", "resorts", "hospitality", "hostelería", "turismo", "tourism"];
   const foundIndustry = industryKeywords.some((kw) => hasExactWord(kw));
-  if (foundIndustry) {
+  if (foundIndustry && foundTitles.length === 0 && foundLocations.length === 0) {
     params.q_keywords = "hotel OR resort OR hospitality";
+  } else if (foundIndustry) {
+    params.q_keywords = "hotel";
   }
 
   const seniorityMap: Record<string, string> = {
