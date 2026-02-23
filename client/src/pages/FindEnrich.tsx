@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
+import { useLists } from "@/lib/listsStore";
 import {
   Search,
   Sparkles,
@@ -231,6 +232,8 @@ export default function FindEnrich() {
 
   const selectedContacts = results.filter((p) => selectedPeople.has(p.id));
 
+  const { addList } = useLists();
+
   const handleSaveToList = async () => {
     if (!listName.trim() || selectedContacts.length === 0) return;
     setIsSaving(true);
@@ -253,22 +256,23 @@ export default function FindEnrich() {
         employees: p.organization?.estimated_num_employees || 0,
       }));
 
-      const response = await fetch("/api/lists", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: listName, contacts }),
+      addList({
+        id: `list-${Date.now()}`,
+        name: listName,
+        contactCount: contacts.length,
+        source: "search",
+        contacts,
+        createdAt: new Date().toISOString(),
       });
 
-      if (response.ok) {
-        toast({
-          title: "Lista creada",
-          description: `"${listName}" con ${contacts.length} contactos`,
-        });
-        setSaveDialogOpen(false);
-        setListName("");
-        setSelectedPeople(new Set());
-        navigate("/lists");
-      }
+      toast({
+        title: "Lista creada",
+        description: `"${listName}" con ${contacts.length} contactos`,
+      });
+      setSaveDialogOpen(false);
+      setListName("");
+      setSelectedPeople(new Set());
+      navigate("/lists");
     } catch {
       toast({
         title: "Error",

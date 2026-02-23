@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -38,11 +40,16 @@ import {
   Send,
   Download,
   Calendar,
+  Linkedin,
+  Building2,
+  Trash2,
 } from "lucide-react";
-import { prospectLists, leads, type ProspectList, type Lead } from "@/lib/mockData";
+import { leads, type ProspectList } from "@/lib/mockData";
+import { useLists, isDynamicList, type DynamicList, type ApolloContact } from "@/lib/listsStore";
+import { useToast } from "@/hooks/use-toast";
 
-const SOURCE_CONFIG: Record<ProspectList["source"], { label: string; variant: "default" | "secondary" | "outline" }> = {
-  search: { label: "Busqueda", variant: "secondary" },
+const SOURCE_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
+  search: { label: "Búsqueda", variant: "secondary" },
   import: { label: "Importado", variant: "outline" },
   ai: { label: "IA", variant: "default" },
   manual: { label: "Manual", variant: "outline" },
@@ -59,15 +66,19 @@ function formatDate(dateStr: string) {
 function ListCard({
   list,
   onClick,
+  onDelete,
+  isDynamic,
 }: {
-  list: ProspectList;
+  list: ProspectList | DynamicList;
   onClick: () => void;
+  onDelete?: () => void;
+  isDynamic: boolean;
 }) {
-  const sourceConfig = SOURCE_CONFIG[list.source];
+  const sourceConfig = SOURCE_CONFIG[list.source] || SOURCE_CONFIG.manual;
 
   return (
     <Card
-      className="hover-elevate active-elevate-2 cursor-pointer"
+      className="hover-elevate active-elevate-2 cursor-pointer group relative"
       onClick={onClick}
       data-testid={`card-list-${list.id}`}
     >
@@ -80,9 +91,22 @@ function ListCard({
             {list.name}
           </CardTitle>
         </div>
-        <Badge variant={sourceConfig.variant} data-testid={`badge-source-${list.id}`}>
-          {sourceConfig.label}
-        </Badge>
+        <div className="flex items-center gap-1.5">
+          <Badge variant={sourceConfig.variant} data-testid={`badge-source-${list.id}`}>
+            {sourceConfig.label}
+          </Badge>
+          {isDynamic && onDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              data-testid={`button-delete-list-${list.id}`}
+            >
+              <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -102,7 +126,228 @@ function ListCard({
   );
 }
 
-function ListDetailView({
+function DynamicListDetailView({
+  list,
+  onBack,
+}: {
+  list: DynamicList;
+  onBack: () => void;
+}) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const filteredContacts = list.contacts.filter(
+    (c) =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const allSelected =
+    filteredContacts.length > 0 &&
+    filteredContacts.every((c) => selectedIds.has(c.id));
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredContacts.map((c) => c.id)));
+    }
+  }
+
+  function toggleOne(id: string) {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  }
+
+  const sourceConfig = SOURCE_CONFIG[list.source] || SOURCE_CONFIG.manual;
+
+  return (
+    <div className="flex flex-col gap-4 h-full">
+      <div className="flex items-center gap-3 flex-wrap">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          data-testid="button-back-lists"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-lg font-semibold truncate" data-testid="text-list-name">
+            {list.name}
+          </h2>
+          <Badge variant={sourceConfig.variant}>
+            {sourceConfig.label}
+          </Badge>
+        </div>
+        <span className="text-sm text-muted-foreground">
+          {list.contactCount} contactos
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar contactos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+            data-testid="input-search-contacts"
+          />
+        </div>
+
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-muted-foreground">
+              {selectedIds.size} seleccionados
+            </span>
+            <Button size="sm" data-testid="button-enrich-all">
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              Enriquecer
+            </Button>
+            <Button size="sm" variant="outline" data-testid="button-add-campaign">
+              <Send className="w-3.5 h-3.5 mr-1.5" />
+              Campaña
+            </Button>
+            <Button size="sm" variant="outline" data-testid="button-export">
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              Exportar
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <Card>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={toggleAll}
+                    data-testid="checkbox-select-all"
+                  />
+                </TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Cargo</TableHead>
+                <TableHead>Empresa</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Teléfono</TableHead>
+                <TableHead>País</TableHead>
+                <TableHead>LinkedIn</TableHead>
+                <TableHead className="w-10"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredContacts.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={9}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    No se encontraron contactos
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredContacts.map((contact) => (
+                  <TableRow
+                    key={contact.id}
+                    data-testid={`row-contact-${contact.id}`}
+                    className={selectedIds.has(contact.id) ? "bg-primary/5" : ""}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(contact.id)}
+                        onCheckedChange={() => toggleOne(contact.id)}
+                        data-testid={`checkbox-contact-${contact.id}`}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground flex-shrink-0">
+                          {contact.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                        </div>
+                        <span className="font-medium" data-testid={`text-name-${contact.id}`}>
+                          {contact.name}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {contact.title}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Building2 className="w-3 h-3 text-muted-foreground" />
+                        <span>{contact.company}</span>
+                      </div>
+                      {contact.industry && (
+                        <span className="text-[11px] text-muted-foreground">{contact.industry}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {contact.email ? (
+                        <span className="text-sm">{contact.email}</span>
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px]">
+                          {contact.email_status === "available" ? "Disponible" : "No disponible"}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {contact.phone || "-"}
+                    </TableCell>
+                    <TableCell>{contact.country || contact.city || "-"}</TableCell>
+                    <TableCell>
+                      {contact.linkedin_url ? (
+                        <a
+                          href={contact.linkedin_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 dark:text-blue-400 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Linkedin className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            data-testid={`button-actions-${contact.id}`}
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Enriquecer</DropdownMenuItem>
+                          <DropdownMenuItem>Añadir a campaña</DropdownMenuItem>
+                          <DropdownMenuItem>Eliminar de lista</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function MockListDetailView({
   list,
   onBack,
 }: {
@@ -134,13 +379,12 @@ function ListDetailView({
 
   function toggleOne(id: string) {
     const next = new Set(selectedIds);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-    }
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
     setSelectedIds(next);
   }
+
+  const sourceConfig = SOURCE_CONFIG[list.source] || SOURCE_CONFIG.manual;
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -157,8 +401,8 @@ function ListDetailView({
           <h2 className="text-lg font-semibold truncate" data-testid="text-list-name">
             {list.name}
           </h2>
-          <Badge variant={SOURCE_CONFIG[list.source].variant}>
-            {SOURCE_CONFIG[list.source].label}
+          <Badge variant={sourceConfig.variant}>
+            {sourceConfig.label}
           </Badge>
         </div>
         <span className="text-sm text-muted-foreground">
@@ -293,24 +537,54 @@ function ListDetailView({
 }
 
 export default function ListsPage() {
-  const [selectedList, setSelectedList] = useState<ProspectList | null>(null);
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const { getAllLists, getDynamicList, removeList } = useLists();
+
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
 
-  const filteredLists = prospectLists.filter((l) =>
+  const allLists = getAllLists();
+  const filteredLists = allLists.filter((l) =>
     l.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (selectedList) {
-    return (
-      <div className="p-4 h-full overflow-auto">
-        <ListDetailView
-          list={selectedList}
-          onBack={() => setSelectedList(null)}
-        />
-      </div>
-    );
+  if (selectedListId) {
+    const dynamicList = getDynamicList(selectedListId);
+    if (dynamicList) {
+      return (
+        <div className="p-4 h-full overflow-auto">
+          <DynamicListDetailView
+            list={dynamicList}
+            onBack={() => setSelectedListId(null)}
+          />
+        </div>
+      );
+    }
+
+    const mockList = allLists.find((l) => l.id === selectedListId && "contactIds" in l) as ProspectList | undefined;
+    if (mockList) {
+      return (
+        <div className="p-4 h-full overflow-auto">
+          <MockListDetailView
+            list={mockList}
+            onBack={() => setSelectedListId(null)}
+          />
+        </div>
+      );
+    }
+
+    setSelectedListId(null);
   }
+
+  const handleDeleteList = (id: string, name: string) => {
+    removeList(id);
+    toast({
+      title: "Lista eliminada",
+      description: `"${name}" ha sido eliminada`,
+    });
+  };
 
   return (
     <div className="p-4 h-full overflow-auto">
@@ -335,29 +609,41 @@ export default function ListsPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Crear nueva lista</DialogTitle>
+                <DialogDescription>
+                  Elige cómo quieres crear tu nueva lista de prospectos
+                </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col gap-3 pt-2">
                 <Button
                   variant="outline"
-                  className="justify-start gap-3"
-                  onClick={() => setCreateOpen(false)}
+                  className="justify-start gap-3 h-auto py-3"
+                  onClick={() => {
+                    setCreateOpen(false);
+                    navigate("/find");
+                  }}
                   data-testid="button-create-search"
                 >
-                  <Search className="w-4 h-4 text-primary" />
+                  <Search className="w-5 h-5 text-primary flex-shrink-0" />
                   <div className="text-left">
                     <div className="font-medium text-sm">Desde resultados de búsqueda</div>
                     <div className="text-xs text-muted-foreground">
-                      Crea una lista a partir de una búsqueda de prospectos
+                      Busca prospectos con Apollo y guárdalos como lista
                     </div>
                   </div>
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-start gap-3"
-                  onClick={() => setCreateOpen(false)}
+                  className="justify-start gap-3 h-auto py-3"
+                  onClick={() => {
+                    setCreateOpen(false);
+                    toast({
+                      title: "Importar CSV",
+                      description: "Funcionalidad próximamente disponible",
+                    });
+                  }}
                   data-testid="button-create-import"
                 >
-                  <Upload className="w-4 h-4 text-primary" />
+                  <Upload className="w-5 h-5 text-primary flex-shrink-0" />
                   <div className="text-left">
                     <div className="font-medium text-sm">Importar CSV</div>
                     <div className="text-xs text-muted-foreground">
@@ -367,11 +653,17 @@ export default function ListsPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-start gap-3"
-                  onClick={() => setCreateOpen(false)}
+                  className="justify-start gap-3 h-auto py-3"
+                  onClick={() => {
+                    setCreateOpen(false);
+                    toast({
+                      title: "Recomendaciones IA",
+                      description: "Funcionalidad próximamente disponible",
+                    });
+                  }}
                   data-testid="button-create-ai"
                 >
-                  <Bot className="w-4 h-4 text-primary" />
+                  <Bot className="w-5 h-5 text-primary flex-shrink-0" />
                   <div className="text-left">
                     <div className="font-medium text-sm">Recomendaciones IA</div>
                     <div className="text-xs text-muted-foreground">
@@ -396,19 +688,33 @@ export default function ListsPage() {
         </div>
 
         {filteredLists.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
             <List className="w-10 h-10" />
             <p className="text-sm">No se encontraron listas</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/find")}
+              data-testid="button-go-search"
+            >
+              <Search className="w-3.5 h-3.5 mr-1.5" />
+              Ir a buscar prospectos
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {filteredLists.map((list) => (
-              <ListCard
-                key={list.id}
-                list={list}
-                onClick={() => setSelectedList(list)}
-              />
-            ))}
+            {filteredLists.map((list) => {
+              const dynamic = isDynamicList(list);
+              return (
+                <ListCard
+                  key={list.id}
+                  list={list}
+                  isDynamic={dynamic}
+                  onClick={() => setSelectedListId(list.id)}
+                  onDelete={dynamic ? () => handleDeleteList(list.id, list.name) : undefined}
+                />
+              );
+            })}
           </div>
         )}
       </div>
