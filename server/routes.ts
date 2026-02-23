@@ -81,10 +81,27 @@ function parseNaturalLanguageQuery(query: string): ApolloSearchParams {
   const params: ApolloSearchParams = { per_page: 25, page: 1 };
   const q = query.toLowerCase();
 
-  const titleKeywords = ["director", "cmo", "ceo", "cto", "cfo", "revenue manager", "marketing", "gerente", "jefe", "responsable", "manager", "vp", "head"];
+  const words = q.split(/\s+/);
+
+  function hasWord(word: string): boolean {
+    return words.some((w) => w === word || q.includes(word));
+  }
+
+  function hasExactWord(word: string): boolean {
+    const regex = new RegExp(`\\b${word}\\b`, "i");
+    return regex.test(q);
+  }
+
+  const titleMap: Record<string, string> = {
+    "director": "director", "directora": "director", "directores": "director",
+    "cmo": "cmo", "ceo": "ceo", "cto": "cto", "cfo": "cfo",
+    "revenue manager": "revenue manager", "marketing": "marketing manager",
+    "gerente": "gerente", "jefe": "jefe", "responsable": "responsable",
+    "manager": "manager", "head": "head",
+  };
   const foundTitles: string[] = [];
-  for (const kw of titleKeywords) {
-    if (q.includes(kw)) foundTitles.push(kw);
+  for (const [key, value] of Object.entries(titleMap)) {
+    if (hasExactWord(key)) foundTitles.push(value);
   }
   if (foundTitles.length > 0) params.person_titles = foundTitles;
 
@@ -99,26 +116,26 @@ function parseNaturalLanguageQuery(query: string): ApolloSearchParams {
   };
   const foundLocations: string[] = [];
   for (const [key, value] of Object.entries(locationMap)) {
-    if (q.includes(key)) foundLocations.push(value);
+    if (hasExactWord(key)) foundLocations.push(value);
   }
   if (foundLocations.length > 0) params.organization_locations = foundLocations;
 
   const industryKeywords = ["hotel", "hoteles", "resort", "resorts", "hospitality", "hostelería", "turismo", "tourism"];
-  const foundIndustry = industryKeywords.some((kw) => q.includes(kw));
+  const foundIndustry = industryKeywords.some((kw) => hasExactWord(kw));
   if (foundIndustry) {
     params.q_keywords = "hotel OR resort OR hospitality";
   }
 
   const seniorityMap: Record<string, string> = {
     "ceo": "c_suite", "cmo": "c_suite", "cto": "c_suite", "cfo": "c_suite",
-    "vp": "vp", "vice president": "vp",
-    "director": "director", "directora": "director",
+    "vp": "vp",
+    "director": "director", "directora": "director", "directores": "director",
     "head": "head", "jefe": "head",
     "manager": "manager", "gerente": "manager", "responsable": "manager",
   };
   const foundSeniorities: string[] = [];
   for (const [key, value] of Object.entries(seniorityMap)) {
-    if (q.includes(key) && !foundSeniorities.includes(value)) foundSeniorities.push(value);
+    if (hasExactWord(key) && !foundSeniorities.includes(value)) foundSeniorities.push(value);
   }
   if (foundSeniorities.length > 0) params.person_seniorities = foundSeniorities;
 
@@ -164,7 +181,9 @@ export async function registerRoutes(
       if (filters?.person_seniorities?.length) searchParams.person_seniorities = filters.person_seniorities;
       if (filters?.contact_email_status?.length) searchParams.contact_email_status = filters.contact_email_status;
 
-      const response = await fetch(`${APOLLO_API_BASE}/mixed_people/search`, {
+      console.log("Apollo search params:", JSON.stringify(searchParams));
+
+      const response = await fetch(`${APOLLO_API_BASE}/mixed_people/api_search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -173,9 +192,11 @@ export async function registerRoutes(
         body: JSON.stringify(searchParams),
       });
 
+      const responseText = await response.text();
+      console.log("Apollo raw response status:", response.status, "body:", responseText.slice(0, 500));
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Apollo API error:", response.status, errorText);
+        console.error("Apollo API error:", response.status, responseText);
         const fallback = getMockResults(query || "");
         return res.json({
           source: "mock",
@@ -187,21 +208,21 @@ export async function registerRoutes(
         });
       }
 
-      const data = await response.json();
+      const data = JSON.parse(responseText);
 
-      const people = (data.people || []).map((p: ApolloPersonResult) => ({
+      const people = (data.people || []).map((p: any) => ({
         id: p.id,
-        name: p.name || `${p.first_name || ""} ${p.last_name || ""}`.trim(),
+        name: p.name || `${p.first_name || ""} ${p.last_name || p.last_name_obfuscated || ""}`.trim(),
         title: p.title || "",
         email: p.email || "",
-        email_status: p.email_status || "unavailable",
+        email_status: p.has_email ? (p.email ? "verified" : "available") : "unavailable",
         linkedin_url: p.linkedin_url || "",
         photo_url: p.photo_url || "",
         city: p.city || "",
         state: p.state || "",
         country: p.country || "",
         seniority: p.seniority || "",
-        phone: p.phone_numbers?.[0]?.raw_number || "",
+        phone: p.phone_numbers?.[0]?.raw_number || (p.has_direct_phone === "Yes" ? "disponible" : ""),
         organization: p.organization ? {
           name: p.organization.name || "",
           website_url: p.organization.website_url || "",

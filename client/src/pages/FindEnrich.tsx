@@ -77,6 +77,14 @@ function EmailStatusBadge({ status }: { status: string }) {
       </Badge>
     );
   }
+  if (status === "available") {
+    return (
+      <Badge variant="secondary" className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+        <Zap className="w-3 h-3 mr-1" />
+        Disponible
+      </Badge>
+    );
+  }
   if (status === "likely to engage") {
     return (
       <Badge variant="secondary" className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
