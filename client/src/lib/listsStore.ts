@@ -35,6 +35,7 @@ export interface ListsContextType {
   dynamicLists: DynamicList[];
   addList: (list: DynamicList) => void;
   removeList: (id: string) => void;
+  removeContactFromList: (listId: string, contactId: string) => void;
   getAllLists: () => (ProspectList | DynamicList)[];
   getDynamicList: (id: string) => DynamicList | undefined;
 }
@@ -43,6 +44,7 @@ export const ListsContext = createContext<ListsContextType>({
   dynamicLists: [],
   addList: () => {},
   removeList: () => {},
+  removeContactFromList: () => {},
   getAllLists: () => prospectLists,
   getDynamicList: () => undefined,
 });

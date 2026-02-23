@@ -54,6 +54,16 @@ function ListsProvider({ children }: { children: React.ReactNode }) {
     setDynamicLists((prev) => prev.filter((l) => l.id !== id));
   }, []);
 
+  const removeContactFromList = useCallback((listId: string, contactId: string) => {
+    setDynamicLists((prev) =>
+      prev.map((l) => {
+        if (l.id !== listId) return l;
+        const updated = l.contacts.filter((c) => c.id !== contactId);
+        return { ...l, contacts: updated, contactCount: updated.length };
+      })
+    );
+  }, []);
+
   const getAllLists = useCallback(() => {
     const mockLists = prospectLists.map((l) => ({
       ...l,
@@ -67,7 +77,7 @@ function ListsProvider({ children }: { children: React.ReactNode }) {
   }, [dynamicLists]);
 
   return (
-    <ListsContext.Provider value={{ dynamicLists, addList, removeList, getAllLists, getDynamicList }}>
+    <ListsContext.Provider value={{ dynamicLists, addList, removeList, removeContactFromList, getAllLists, getDynamicList }}>
       {children}
     </ListsContext.Provider>
   );

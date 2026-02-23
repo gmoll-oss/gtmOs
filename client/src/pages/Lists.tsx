@@ -133,6 +133,9 @@ function DynamicListDetailView({
   list: DynamicList;
   onBack: () => void;
 }) {
+  const { removeContactFromList } = useLists();
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -206,17 +209,58 @@ function DynamicListDetailView({
             <span className="text-sm text-muted-foreground">
               {selectedIds.size} seleccionados
             </span>
-            <Button size="sm" data-testid="button-enrich-all">
+            <Button
+              size="sm"
+              data-testid="button-enrich-all"
+              onClick={() => toast({ title: "Enriquecimiento", description: `${selectedIds.size} contactos en cola de enriquecimiento. Requiere créditos de Apollo.` })}
+            >
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               Enriquecer
             </Button>
-            <Button size="sm" variant="outline" data-testid="button-add-campaign">
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="button-add-campaign"
+              onClick={() => { navigate("/campaigns"); toast({ title: "Campaña", description: `${selectedIds.size} contactos listos para añadir a una campaña` }); }}
+            >
               <Send className="w-3.5 h-3.5 mr-1.5" />
               Campaña
             </Button>
-            <Button size="sm" variant="outline" data-testid="button-export">
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="button-export"
+              onClick={() => {
+                const selected = list.contacts.filter((c) => selectedIds.has(c.id));
+                const csv = ["Nombre,Cargo,Empresa,Email,Teléfono,País,LinkedIn"]
+                  .concat(selected.map((c) => `"${c.name}","${c.title}","${c.company}","${c.email}","${c.phone}","${c.country}","${c.linkedin_url}"`))
+                  .join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${list.name}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast({ title: "Exportado", description: `${selected.length} contactos exportados a CSV` });
+              }}
+            >
               <Download className="w-3.5 h-3.5 mr-1.5" />
               Exportar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              data-testid="button-remove-selected"
+              onClick={() => {
+                selectedIds.forEach((id) => removeContactFromList(list.id, id));
+                toast({ title: "Eliminados", description: `${selectedIds.size} contactos eliminados de la lista` });
+                setSelectedIds(new Set());
+              }}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Eliminar
             </Button>
           </div>
         )}
@@ -330,9 +374,25 @@ function DynamicListDetailView({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Enriquecer</DropdownMenuItem>
-                          <DropdownMenuItem>Añadir a campaña</DropdownMenuItem>
-                          <DropdownMenuItem>Eliminar de lista</DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => toast({ title: "Enriquecimiento", description: `"${contact.name}" en cola de enriquecimiento. Requiere créditos de Apollo.` })}
+                          >
+                            Enriquecer
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => { navigate("/campaigns"); toast({ title: "Campaña", description: `"${contact.name}" listo para añadir a una campaña` }); }}
+                          >
+                            Añadir a campaña
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              removeContactFromList(list.id, contact.id);
+                              toast({ title: "Eliminado", description: `"${contact.name}" eliminado de la lista` });
+                            }}
+                          >
+                            Eliminar de lista
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
