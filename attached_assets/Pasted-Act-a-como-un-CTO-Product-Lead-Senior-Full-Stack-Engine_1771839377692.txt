@@ -1,0 +1,179 @@
+Actúa como un CTO + Product Lead + Senior Full-Stack Engineer. Diseña y construye una aplicación SaaS “white-label” multi-tenant para Fideltour que replica el MODELO FUNCIONAL de Genesy AI (mismos jobs-to-be-done y workflows) para ir rápido. NO inventes features nuevas. NO copies UI, textos, naming ni código literal de Genesy; pero sí replica exactamente su lógica de producto: Find → Enrich → Engage → Sync/Export, con paneles y estados similares.
+
+CONTEXTO
+- Empresa: Fideltour
+- Stack interno: Zoho One (Zoho CRM como sistema central)
+- Canal principal: Email
+- Requisito: generar leads automáticamente (scraping/discovery) SIN que el usuario tenga que aportar listas (sin CSV como fuente principal).
+- LinkedIn: opcional a explorar, NO prioridad MVP.
+- Requisito crítico: NEGATIVIZACIÓN global para NO contactar clientes actuales ni prospectos en marcha ni DNC/unsubscribe.
+
+OBJETIVO DEL PRODUCTO (Genesy-like)
+Construir un “Fideltour Growth Orchestrator” white-label que:
+1) FIND (autónomo): descubrir empresas/prospectos automáticamente y extraer contactos/roles objetivo
+2) ENRICH: enriquecer en cascada (waterfall) + validar email + dedupe
+3) SCORE: scoring configurable (ICP + completitud + señales)
+4) ENGAGE: secuencias email (templates + IA opcional para personalizar)
+5) SYNC: enviar a Zoho CRM como LEAD (Posible Cliente / Lead) sin crear Accounts ni Deals al inicio.
+6) FEEDBACK LOOP: registrar outcomes y retroalimentar.
+
+IMPORTANTE SOBRE “FIND” (SIN LISTAS)
+- El sistema debe generar leads automáticamente desde criterios (“seeds”) configurables por tenant:
+  - geografía, industria/vertical, tamaño empresa, keywords, tipo de negocio, cargo objetivo, etc.
+- Implementa un “Discovery Engine” con conectores:
+  A) MVP: fuentes públicas/dirs con scraping controlado + APIs cuando existan:
+     - Web search (SERP API o similar)
+     - Crawling de websites oficiales de empresas encontradas
+     - Directorios sectoriales (configurables por tenant)
+  B) Si hay API disponible, priorizar API en vez de scraping.
+- NO implementar scraping agresivo de LinkedIn en MVP. (Dejar “LinkedIn connector” como stub/futuro).
+- El Discovery Engine debe:
+  - encontrar “Accounts candidatos” (company name, domain, website)
+  - extraer señales firmográficas básicas (si se puede) y páginas “Contact/About/Team”
+  - intentar identificar emails/cargos usando heurísticas + enrichment providers.
+- Guardar trazabilidad: source_url, timestamp, método, confidence.
+
+PRODUCTO: MVP (imprescindible)
+A) Multi-tenant white-label
+- Branding por tenant (logo, colores, nombre)
+- Ajustes por tenant: criterios de discovery, reglas de exclusión, scoring, templates, proveedores.
+
+B) Pipeline estilo Genesy (NO inventar)
+- Estados (mínimo): Discovered → Qualified → Enriched → Eligible → In Sequence → Engaged → Ready to Sync → Synced → Excluded → Archived
+- Panel principal tipo “operaciones”: filtro por estado, score, fuente, tenant, campaña.
+
+C) Discovery Engine (autónomo)
+- UI para configurar “Search Jobs” (jobs recurrentes/manuales):
+  - Geo, industria, keywords, filtros, límites diarios
+- Job runner:
+  - ejecuta búsqueda, recolecta websites/empresas
+  - crea “ProspectAccount” (local) y “ProspectLeadCandidates”
+  - dedupe por dominio
+- Implementar rate limiting, colas y reintentos.
+
+D) Enrichment Waterfall + Validación email
+- Interfaz “EnrichmentProvider” (mock + posibilidad de integrar reales)
+- Waterfall: provider A → si falla → B → etc.
+- Guardar EnrichmentAttempt con payload, status, confidence.
+- Email validation (mock en MVP, interfaz preparada para real)
+
+E) NEGATIVIZACIÓN / EXCLUSION ENGINE (CRÍTICO)
+Debe ejecutarse:
+- antes de entrar en secuencia
+- y también justo antes de enviar cada email (late check)
+
+Checks configurables:
+1) Local suppression: email
+2) Local suppression: dominio (opcional)
+3) Zoho CRM: si ese email o dominio ya pertenece a:
+   - cliente actual
+   - prospecto activo “en marcha”
+   - registro con Do Not Contact
+4) Zoho Campaigns unsubscribes (si no hay integración, lista interna)
+5) “Recent sales activity” < N días (configurable, default 60)
+6) “Strategic / managed manually” flag
+
+Output:
+- excluded_bool
+- exclusion_reason (string enumerado)
+- exclusion_source (local/zoho/campaigns)
+- timestamp
+- log en EventLog
+
+F) Engagement Email (Genesy-like)
+- Secuencias: Email 1 + Follow-up 1 + Follow-up 2 + Breakup
+- Templates con variables (empresa, nombre, rol, pain, propuesta)
+- IA opcional “CopyGenerator” para subject/body a partir de enrichment + ICP
+- Envío:
+  - MVP: SMTP
+  - Tracking básico: sent, bounced, replied (manual o parsing simple)
+- “Inbox” mínimo: lista de replies asociadas al lead (si es viable)
+
+G) SYNC A ZOHO CRM (MUY IMPORTANTE)
+Reglas:
+- Cuando un lead esté “Ready to Sync” se debe crear/actualizar en Zoho CRM como:
+  - MÓDULO: Leads
+  - ESTADO: “Posible Cliente” o “Lead” (según mapping de tenant)
+- NO crear Deals/Opportunities.
+- NO crear Accounts al principio.
+- PERO puede pasar que la Account del prospecto ya exista en Zoho:
+  - Buscar por dominio o nombre
+  - Si existe, NO crear otra.
+  - Guardar referencia (zoho_account_id) en el lead local y, si Zoho permite, asociar el Lead a la Account existente o al menos guardar el “Account match” como campo custom (p.ej. Existing_Account_ID / Existing_Account_Name).
+- Implementar “ZohoConnector” con OAuth2:
+  - searchLeadByEmail()
+  - upsertLead()
+  - searchAccountByDomainOrName()
+  - fetchAccountStatus()
+  - fetchRecentActivitiesByAccountOrLead()
+  - searchSuppression/DNC flags si existe en Zoho
+- Mapear campos de Lead:
+  - Email, Company, Website/Domain, Lead Source, Industry, City/Country, Contact Name, Title, Phone (si hay), Notes
+  - Campos custom: Score, EnrichmentConfidence, ExclusionReason, LastEnrichedAt, SourceURLs (resumen), “AccountMatchFound” boolean, “MatchedAccountId”
+
+H) Observabilidad y auditoría
+- EventLog por lead: discovered, enriched, excluded, enrolled, sent, reply, synced
+- Panel de auditoría: por qué se excluyó y qué check lo causó.
+
+NO OBJETIVOS (MVP)
+- Automatización agresiva de LinkedIn (solo stub)
+- Scraping masivo sin rate limits / sin logs / sin trazabilidad
+- ML complejo; usar reglas + IA generativa para copy
+
+TECNOLOGÍA (elige stack y construye)
+- Frontend: Next.js
+- Backend: Node.js (NestJS) o Python (FastAPI) — elige uno.
+- DB: Postgres
+- Queue: Redis + BullMQ/Celery
+- Auth: multi-tenant + RBAC
+- Config y secrets: cifrar tokens Zoho
+
+MODELO DE DATOS (mínimo)
+- Tenant, User
+- ProspectAccount (local): name, domain, website, source, confidence
+- Lead (local): email, name, title, company/domain, status, score, excluded, matched_zoho_account_id, zoho_lead_id
+- SearchJob: criterios, schedule, límites
+- EnrichmentAttempt
+- Sequence, SequenceEnrollment
+- Message
+- EventLog
+- SuppressionList
+- ExclusionRule
+- ZohoSyncMap
+
+WORKFLOWS (implementar end-to-end)
+1) SearchJob run:
+   - discover accounts/domains → create ProspectAccount + Lead candidates
+2) Dedupe:
+   - domain-level dedupe + email-level dedupe
+3) Enrich:
+   - waterfall → compute score
+4) ExclusionEngine:
+   - pre-check
+5) Eligible:
+   - enroll en secuencia
+6) Before send:
+   - late ExclusionEngine
+7) Ready to Sync:
+   - upsert Lead en Zoho (sin Accounts/Deals)
+8) Feedback:
+   - outcomes y logs
+
+UI MÍNIMA (Genesy-like, sin inventar)
+- Dashboard pipeline con estados
+- SearchJobs: crear/editar/ejecutar
+- Leads list + filtros + bulk actions (enroll, exclude, sync)
+- Lead detail: enrichment, fuentes, event timeline
+- Sequences builder
+- Tenant settings: branding, Zoho OAuth, SMTP, scoring, exclusión, criterios de discovery
+
+ENTREGABLES
+- App funcionando local con mocks (discovery/enrichment/zoho)
+- Interfaces listas para integrar proveedores reales
+- README completo
+- Seed/demo: un SearchJob que descubre X empresas, genera leads, enriquece, excluye, envía (mock) y sincroniza (mock)
+
+PRIORIDAD ABSOLUTA
+- “Copiar lo que funciona” de Genesy a nivel de FLUJO y OPERATIVA.
+- No inventar módulos extra.
+- Hacerlo operable: estados claros, trazabilidad, exclusión robusta, sync Zoho Lead correcto.
