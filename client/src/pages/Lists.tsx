@@ -414,10 +414,13 @@ function MockListDetailView({
   list: ProspectList;
   onBack: () => void;
 }) {
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
 
-  const contactsInList = leads.filter((l) => list.contactIds.includes(l.id));
+  const contactsInList = leads.filter((l) => list.contactIds.includes(l.id) && !removedIds.has(l.id));
   const filteredContacts = contactsInList.filter(
     (c) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -487,17 +490,58 @@ function MockListDetailView({
             <span className="text-sm text-muted-foreground">
               {selectedIds.size} seleccionados
             </span>
-            <Button size="sm" data-testid="button-enrich-all">
+            <Button
+              size="sm"
+              data-testid="button-enrich-all"
+              onClick={() => toast({ title: "Enriquecimiento", description: `${selectedIds.size} contactos en cola de enriquecimiento` })}
+            >
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               Enriquecer
             </Button>
-            <Button size="sm" variant="outline" data-testid="button-add-campaign">
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="button-add-campaign"
+              onClick={() => { navigate("/campaigns"); toast({ title: "Campaña", description: `${selectedIds.size} contactos listos para añadir a una campaña` }); }}
+            >
               <Send className="w-3.5 h-3.5 mr-1.5" />
               Campaña
             </Button>
-            <Button size="sm" variant="outline" data-testid="button-export">
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="button-export"
+              onClick={() => {
+                const selected = contactsInList.filter((c) => selectedIds.has(c.id));
+                const csv = ["Nombre,Cargo,Empresa,Email,Teléfono,País"]
+                  .concat(selected.map((c) => `"${c.name}","${c.title}","${c.company}","${c.email}","${c.phone}","${c.country}"`))
+                  .join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${list.name}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast({ title: "Exportado", description: `${selected.length} contactos exportados a CSV` });
+              }}
+            >
               <Download className="w-3.5 h-3.5 mr-1.5" />
               Exportar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              data-testid="button-remove-selected"
+              onClick={() => {
+                setRemovedIds((prev) => { const next = new Set(prev); selectedIds.forEach((id) => next.add(id)); return next; });
+                toast({ title: "Eliminados", description: `${selectedIds.size} contactos eliminados de la lista` });
+                setSelectedIds(new Set());
+              }}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Eliminar
             </Button>
           </div>
         )}
@@ -540,6 +584,7 @@ function MockListDetailView({
                   <TableRow
                     key={contact.id}
                     data-testid={`row-contact-${contact.id}`}
+                    className={selectedIds.has(contact.id) ? "bg-primary/5" : ""}
                   >
                     <TableCell>
                       <Checkbox
@@ -548,8 +593,15 @@ function MockListDetailView({
                         data-testid={`checkbox-contact-${contact.id}`}
                       />
                     </TableCell>
-                    <TableCell className="font-medium" data-testid={`text-name-${contact.id}`}>
-                      {contact.name}
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground flex-shrink-0">
+                          {contact.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                        </div>
+                        <span className="font-medium" data-testid={`text-name-${contact.id}`}>
+                          {contact.name}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {contact.title}
@@ -579,9 +631,25 @@ function MockListDetailView({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Enriquecer</DropdownMenuItem>
-                          <DropdownMenuItem>Añadir a campaña</DropdownMenuItem>
-                          <DropdownMenuItem>Eliminar de lista</DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => toast({ title: "Enriquecimiento", description: `"${contact.name}" en cola de enriquecimiento` })}
+                          >
+                            Enriquecer
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => { navigate("/campaigns"); toast({ title: "Campaña", description: `"${contact.name}" listo para añadir a una campaña` }); }}
+                          >
+                            Añadir a campaña
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              setRemovedIds((prev) => { const next = new Set(prev); next.add(contact.id); return next; });
+                              toast({ title: "Eliminado", description: `"${contact.name}" eliminado de la lista` });
+                            }}
+                          >
+                            Eliminar de lista
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
