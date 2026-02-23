@@ -92,16 +92,34 @@ function parseNaturalLanguageQuery(query: string): ApolloSearchParams {
     return regex.test(q);
   }
 
-  const titleMap: Record<string, string> = {
-    "director": "director", "directora": "director", "directores": "director",
-    "cmo": "cmo", "ceo": "ceo", "cto": "cto", "cfo": "cfo",
-    "revenue manager": "revenue manager", "marketing": "marketing manager",
-    "gerente": "gerente", "jefe": "jefe", "responsable": "responsable",
-    "manager": "manager", "head": "head",
+  const titleMap: Record<string, string[]> = {
+    "director": ["director"], "directora": ["director"], "directores": ["director"],
+    "cmo": ["cmo", "chief marketing officer"], "ceo": ["ceo", "chief executive officer"],
+    "cto": ["cto", "chief technology officer"], "cfo": ["cfo", "chief financial officer"],
+    "revenue manager": ["revenue manager"], "marketing": ["marketing manager", "marketing director"],
+    "gerente": ["gerente", "general manager"], "jefe": ["jefe", "head"],
+    "responsable": ["responsable", "manager"], "manager": ["manager"],
+    "head": ["head"],
+    "propietario": ["owner", "propietario", "founder", "ceo"],
+    "propietarios": ["owner", "propietario", "founder", "ceo"],
+    "propietaria": ["owner", "propietaria", "founder", "ceo"],
+    "dueño": ["owner", "founder", "ceo"], "dueña": ["owner", "founder", "ceo"],
+    "dueños": ["owner", "founder", "ceo"],
+    "owner": ["owner", "founder"], "owners": ["owner", "founder"],
+    "fundador": ["founder", "co-founder"], "fundadora": ["founder", "co-founder"],
+    "comercial": ["sales director", "commercial director", "sales manager"],
+    "ventas": ["sales director", "sales manager", "head of sales"],
+    "recepción": ["front desk manager", "reception manager"],
+    "revenue": ["revenue manager", "revenue director"],
+    "general manager": ["general manager"],
   };
   const foundTitles: string[] = [];
-  for (const [key, value] of Object.entries(titleMap)) {
-    if (hasExactWord(key)) foundTitles.push(value);
+  for (const [key, values] of Object.entries(titleMap)) {
+    if (hasExactWord(key)) {
+      for (const v of values) {
+        if (!foundTitles.includes(v)) foundTitles.push(v);
+      }
+    }
   }
   if (foundTitles.length > 0) params.person_titles = foundTitles;
 
@@ -130,6 +148,9 @@ function parseNaturalLanguageQuery(query: string): ApolloSearchParams {
 
   const seniorityMap: Record<string, string> = {
     "ceo": "c_suite", "cmo": "c_suite", "cto": "c_suite", "cfo": "c_suite",
+    "propietario": "owner", "propietarios": "owner", "propietaria": "owner",
+    "dueño": "owner", "dueña": "owner", "dueños": "owner",
+    "owner": "owner", "fundador": "founder", "fundadora": "founder",
     "vp": "vp",
     "director": "director", "directora": "director", "directores": "director",
     "head": "head", "jefe": "head",
