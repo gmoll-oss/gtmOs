@@ -1,154 +1,201 @@
-import { useState, useMemo } from "react";
-import { Search, Sparkles, Filter, UserPlus, Zap, Send, CheckCircle2, Loader2, AlertCircle, X } from "lucide-react";
+import { useState, useCallback } from "react";
+import { useLocation } from "wouter";
+import {
+  Search,
+  Sparkles,
+  Filter,
+  UserPlus,
+  Zap,
+  Send,
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+  X,
+  Linkedin,
+  Globe,
+  Building2,
+  Users,
+  ListPlus,
+  ExternalLink,
+  Info,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { leads, type Lead } from "@/lib/mockData";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
-type EmailStatus = "verified" | "finding" | "not_found";
-
-function getEmailStatus(lead: Lead): EmailStatus {
-  if (lead.enrichmentConfidence >= 0.85) return "verified";
-  if (lead.enrichmentConfidence >= 0.5) return "finding";
-  return "not_found";
+interface SearchPerson {
+  id: string;
+  name: string;
+  title: string;
+  email: string;
+  email_status: string;
+  linkedin_url: string;
+  photo_url?: string;
+  city: string;
+  state?: string;
+  country: string;
+  seniority?: string;
+  phone: string;
+  organization: {
+    name: string;
+    website_url: string;
+    primary_domain: string;
+    estimated_num_employees: number;
+    industry: string;
+    city: string;
+    country: string;
+    linkedin_url?: string;
+  } | null;
 }
 
-function EmailStatusBadge({ status }: { status: EmailStatus }) {
+interface SearchResponse {
+  source: "apollo" | "mock";
+  people: SearchPerson[];
+  total: number;
+  page: number;
+  per_page: number;
+  error?: string;
+}
+
+function EmailStatusBadge({ status }: { status: string }) {
   if (status === "verified") {
     return (
-      <Badge variant="secondary" className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+      <Badge variant="secondary" className="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
         <CheckCircle2 className="w-3 h-3 mr-1" />
         Verificado
       </Badge>
     );
   }
-  if (status === "finding") {
+  if (status === "likely to engage") {
     return (
-      <Badge variant="secondary" className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
-        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-        Buscando
+      <Badge variant="secondary" className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+        <CheckCircle2 className="w-3 h-3 mr-1" />
+        Probable
+      </Badge>
+    );
+  }
+  if (status === "unverified") {
+    return (
+      <Badge variant="secondary" className="text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+        <AlertCircle className="w-3 h-3 mr-1" />
+        Sin verificar
       </Badge>
     );
   }
   return (
-    <Badge variant="secondary" className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+    <Badge variant="secondary" className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
       <AlertCircle className="w-3 h-3 mr-1" />
-      No encontrado
-    </Badge>
-  );
-}
-
-function EnrichmentProgress({ confidence }: { confidence: number }) {
-  const percent = Math.round(confidence * 100);
-  let barColor = "bg-red-500";
-  if (percent >= 80) barColor = "bg-emerald-500";
-  else if (percent >= 50) barColor = "bg-amber-500";
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${percent}%` }} />
-      </div>
-      <span className="text-xs text-muted-foreground">{percent}%</span>
-    </div>
-  );
-}
-
-function ScoreBadge({ score }: { score: number }) {
-  let colorClass = "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300";
-  if (score >= 80) colorClass = "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300";
-  else if (score >= 60) colorClass = "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300";
-
-  return (
-    <Badge variant="secondary" className={`text-xs font-semibold ${colorClass}`}>
-      {score}
+      No disponible
     </Badge>
   );
 }
 
 const EXAMPLE_PROMPTS = [
-  "Directores de hotel en España con más de 50 habitaciones",
+  "CMO hoteles España",
+  "Directores de hotel en Barcelona",
   "Revenue Managers de resorts en México",
-  "CEOs de cadenas hoteleras en Colombia y Perú",
-  "Directoras de marketing de hoteles boutique en Europa",
-];
-
-const ALL_COUNTRIES = Array.from(new Set(leads.map((l) => l.country)));
-const ALL_INDUSTRIES = Array.from(new Set(leads.map((l) => l.industry)));
-const ALL_SOURCES = Array.from(new Set(leads.map((l) => l.source)));
-
-const COMPANY_SIZE_OPTIONS = [
-  { label: "1-50", min: 1, max: 50 },
-  { label: "51-100", min: 51, max: 100 },
-  { label: "101-250", min: 101, max: 250 },
-  { label: "250+", min: 251, max: Infinity },
+  "CEOs de cadenas hoteleras en Colombia",
+  "Directoras de marketing hoteles boutique Europa",
 ];
 
 export default function FindEnrich() {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState<SearchPerson[]>([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [dataSource, setDataSource] = useState<"apollo" | "mock" | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
-  const [showFilters, setShowFilters] = useState(true);
+  const [selectedPeople, setSelectedPeople] = useState<Set<string>>(new Set());
+  const [showFilters, setShowFilters] = useState(false);
 
   const [filterCountry, setFilterCountry] = useState<string>("all");
-  const [filterIndustry, setFilterIndustry] = useState<string>("all");
-  const [filterCompanySize, setFilterCompanySize] = useState<string>("all");
-  const [filterSource, setFilterSource] = useState<string>("all");
+  const [filterSeniority, setFilterSeniority] = useState<string>("all");
+  const [filterSize, setFilterSize] = useState<string>("all");
+  const [filterEmailStatus, setFilterEmailStatus] = useState<string>("all");
 
-  const filteredLeads = useMemo(() => {
-    if (!hasSearched) return [];
-    let result = [...leads].filter((l) => !l.excluded);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [listName, setListName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-    if (filterCountry !== "all") {
-      result = result.filter((l) => l.country === filterCountry);
-    }
-    if (filterIndustry !== "all") {
-      result = result.filter((l) => l.industry === filterIndustry);
-    }
-    if (filterCompanySize !== "all") {
-      const size = COMPANY_SIZE_OPTIONS.find((s) => s.label === filterCompanySize);
-      if (size) {
-        result = result.filter((l) => l.employeeCount >= size.min && l.employeeCount <= size.max);
+  const executeSearch = useCallback(async (query: string) => {
+    setIsSearching(true);
+    setSelectedPeople(new Set());
+
+    try {
+      const filters: Record<string, string[]> = {};
+      if (filterCountry !== "all") filters.organization_locations = [filterCountry];
+      if (filterSeniority !== "all") filters.person_seniorities = [filterSeniority];
+      if (filterSize !== "all") filters.organization_num_employees_ranges = [filterSize];
+      if (filterEmailStatus !== "all") filters.contact_email_status = [filterEmailStatus];
+
+      const response = await fetch("/api/apollo/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, filters }),
+      });
+
+      const data: SearchResponse = await response.json();
+
+      setResults(data.people);
+      setTotalResults(data.total);
+      setDataSource(data.source);
+      setHasSearched(true);
+
+      if (data.error) {
+        toast({
+          title: "Usando datos de ejemplo",
+          description: data.error,
+          variant: "destructive",
+        });
       }
-    }
-    if (filterSource !== "all") {
-      result = result.filter((l) => l.source === filterSource);
-    }
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (l) =>
-          l.name.toLowerCase().includes(q) ||
-          l.title.toLowerCase().includes(q) ||
-          l.company.toLowerCase().includes(q) ||
-          l.country.toLowerCase().includes(q) ||
-          l.industry.toLowerCase().includes(q)
-      );
+      if (data.source === "mock") {
+        toast({
+          title: "Modo demo",
+          description: "Añade tu API Key de Apollo para buscar contactos reales de LinkedIn",
+        });
+      }
+    } catch {
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo conectar con el servidor",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
     }
-
-    return result.sort((a, b) => b.score - a.score);
-  }, [hasSearched, filterCountry, filterIndustry, filterCompanySize, filterSource, searchQuery]);
+  }, [filterCountry, filterSeniority, filterSize, filterEmailStatus, toast]);
 
   const handleSearch = () => {
-    setIsSearching(true);
-    setTimeout(() => {
-      setHasSearched(true);
-      setIsSearching(false);
-    }, 800);
+    if (!searchQuery.trim()) return;
+    executeSearch(searchQuery);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSearch();
   };
 
-  const toggleLead = (id: string) => {
-    setSelectedLeads((prev) => {
+  const handleExampleClick = (prompt: string) => {
+    setSearchQuery(prompt);
+    executeSearch(prompt);
+  };
+
+  const togglePerson = (id: string) => {
+    setSelectedPeople((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -157,34 +204,117 @@ export default function FindEnrich() {
   };
 
   const toggleAll = () => {
-    if (selectedLeads.size === filteredLeads.length) {
-      setSelectedLeads(new Set());
+    if (selectedPeople.size === results.length) {
+      setSelectedPeople(new Set());
     } else {
-      setSelectedLeads(new Set(filteredLeads.map((l) => l.id)));
+      setSelectedPeople(new Set(results.map((p) => p.id)));
     }
   };
 
   const clearFilters = () => {
     setFilterCountry("all");
-    setFilterIndustry("all");
-    setFilterCompanySize("all");
-    setFilterSource("all");
+    setFilterSeniority("all");
+    setFilterSize("all");
+    setFilterEmailStatus("all");
   };
 
   const hasActiveFilters =
-    filterCountry !== "all" ||
-    filterIndustry !== "all" ||
-    filterCompanySize !== "all" ||
-    filterSource !== "all";
+    filterCountry !== "all" || filterSeniority !== "all" || filterSize !== "all" || filterEmailStatus !== "all";
+
+  const selectedContacts = results.filter((p) => selectedPeople.has(p.id));
+
+  const handleSaveToList = async () => {
+    if (!listName.trim() || selectedContacts.length === 0) return;
+    setIsSaving(true);
+
+    try {
+      const contacts = selectedContacts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        title: p.title,
+        email: p.email,
+        email_status: p.email_status,
+        phone: p.phone,
+        linkedin_url: p.linkedin_url,
+        city: p.city,
+        country: p.country,
+        company: p.organization?.name || "",
+        domain: p.organization?.primary_domain || "",
+        website: p.organization?.website_url || "",
+        industry: p.organization?.industry || "",
+        employees: p.organization?.estimated_num_employees || 0,
+      }));
+
+      const response = await fetch("/api/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: listName, contacts }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Lista creada",
+          description: `"${listName}" con ${contacts.length} contactos`,
+        });
+        setSaveDialogOpen(false);
+        setListName("");
+        setSelectedPeople(new Set());
+        navigate("/lists");
+      }
+    } catch {
+      toast({
+        title: "Error",
+        description: "No se pudo crear la lista",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredResults = results.filter((p) => {
+    if (filterCountry !== "all" && p.organization?.country !== filterCountry && p.country !== filterCountry) return false;
+    if (filterSeniority !== "all" && p.seniority !== filterSeniority) return false;
+    if (filterSize !== "all") {
+      const emp = p.organization?.estimated_num_employees || 0;
+      const [min, max] = filterSize.split(",").map(Number);
+      if (emp < min || emp > max) return false;
+    }
+    if (filterEmailStatus !== "all" && p.email_status !== filterEmailStatus) return false;
+    return true;
+  });
+
+  const uniqueCountries = Array.from(new Set(results.map((p) => p.organization?.country || p.country).filter(Boolean)));
 
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 pb-0">
-        <div className="mb-4">
-          <h1 className="text-xl font-semibold" data-testid="text-page-title">Buscar y Enriquecer</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Describe tu perfil de cliente ideal y encuentra prospectos relevantes
-          </p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-semibold" data-testid="text-page-title">Buscar y Enriquecer</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Encuentra prospectos en LinkedIn y fuentes B2B con Apollo.io
+            </p>
+          </div>
+          {dataSource && (
+            <Badge
+              variant="secondary"
+              className={`text-xs gap-1.5 ${dataSource === "apollo" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"}`}
+              data-testid="badge-data-source"
+            >
+              {dataSource === "apollo" ? (
+                <>
+                  <Linkedin className="w-3 h-3" />
+                  Apollo.io conectado
+                </>
+              ) : (
+                <>
+                  <Info className="w-3 h-3" />
+                  Datos de ejemplo
+                </>
+              )}
+            </Badge>
+          )}
         </div>
 
         <Card>
@@ -194,31 +324,23 @@ export default function FindEnrich() {
                 <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                 <Input
                   data-testid="input-icp-search"
-                  placeholder="Describe tu ICP... ej: Directores de hotel en España con más de 50 habitaciones"
+                  placeholder='Describe tu ICP... ej: "CMO hoteles España"'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   className="pl-10"
                 />
               </div>
-              <Button data-testid="button-search" onClick={handleSearch} disabled={isSearching}>
-                {isSearching ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Search className="w-4 h-4" />
-                )}
+              <Button data-testid="button-search" onClick={handleSearch} disabled={isSearching || !searchQuery.trim()}>
+                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 <span className="ml-2">Buscar</span>
               </Button>
-              <Button
-                data-testid="button-toggle-filters"
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-              >
+              <Button data-testid="button-toggle-filters" variant="outline" onClick={() => setShowFilters(!showFilters)}>
                 <Filter className="w-4 h-4" />
                 <span className="ml-2">Filtros</span>
                 {hasActiveFilters && (
                   <Badge variant="default" className="ml-2 text-xs">
-                    {[filterCountry, filterIndustry, filterCompanySize, filterSource].filter((f) => f !== "all").length}
+                    {[filterCountry, filterSeniority, filterSize, filterEmailStatus].filter((f) => f !== "all").length}
                   </Badge>
                 )}
               </Button>
@@ -230,16 +352,9 @@ export default function FindEnrich() {
                 {EXAMPLE_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
-                    data-testid={`button-example-${prompt.substring(0, 20).replace(/\s/g, "-")}`}
-                    className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground hover-elevate active-elevate-2 cursor-pointer"
-                    onClick={() => {
-                      setSearchQuery(prompt);
-                      setIsSearching(true);
-                      setTimeout(() => {
-                        setHasSearched(true);
-                        setIsSearching(false);
-                      }, 800);
-                    }}
+                    data-testid={`button-example-${prompt.substring(0, 15).replace(/\s/g, "-")}`}
+                    className="text-xs px-2.5 py-1 rounded-md bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
+                    onClick={() => handleExampleClick(prompt)}
                   >
                     {prompt}
                   </button>
@@ -256,13 +371,7 @@ export default function FindEnrich() {
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-medium">Filtros</span>
               {hasActiveFilters && (
-                <Button
-                  data-testid="button-clear-filters"
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="text-xs"
-                >
+                <Button data-testid="button-clear-filters" variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
                   <X className="w-3 h-3 mr-1" />
                   Limpiar
                 </Button>
@@ -270,14 +379,14 @@ export default function FindEnrich() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">País</label>
+              <label className="text-xs font-medium text-muted-foreground">País empresa</label>
               <Select value={filterCountry} onValueChange={setFilterCountry}>
                 <SelectTrigger data-testid="select-filter-country">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {ALL_COUNTRIES.map((c) => (
+                  {uniqueCountries.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
                 </SelectContent>
@@ -285,46 +394,50 @@ export default function FindEnrich() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Industria</label>
-              <Select value={filterIndustry} onValueChange={setFilterIndustry}>
-                <SelectTrigger data-testid="select-filter-industry">
-                  <SelectValue placeholder="Todas" />
+              <label className="text-xs font-medium text-muted-foreground">Seniority</label>
+              <Select value={filterSeniority} onValueChange={setFilterSeniority}>
+                <SelectTrigger data-testid="select-filter-seniority">
+                  <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  {ALL_INDUSTRIES.map((i) => (
-                    <SelectItem key={i} value={i}>{i}</SelectItem>
-                  ))}
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="c_suite">C-Suite</SelectItem>
+                  <SelectItem value="vp">VP</SelectItem>
+                  <SelectItem value="director">Director</SelectItem>
+                  <SelectItem value="head">Head</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="senior">Senior</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Tamaño empresa</label>
-              <Select value={filterCompanySize} onValueChange={setFilterCompanySize}>
+              <Select value={filterSize} onValueChange={setFilterSize}>
                 <SelectTrigger data-testid="select-filter-size">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {COMPANY_SIZE_OPTIONS.map((s) => (
-                    <SelectItem key={s.label} value={s.label}>{s.label} empleados</SelectItem>
-                  ))}
+                  <SelectItem value="1,50">1-50 empleados</SelectItem>
+                  <SelectItem value="51,200">51-200 empleados</SelectItem>
+                  <SelectItem value="201,500">201-500 empleados</SelectItem>
+                  <SelectItem value="501,10000">500+ empleados</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Fuente</label>
-              <Select value={filterSource} onValueChange={setFilterSource}>
-                <SelectTrigger data-testid="select-filter-source">
-                  <SelectValue placeholder="Todas" />
+              <label className="text-xs font-medium text-muted-foreground">Estado email</label>
+              <Select value={filterEmailStatus} onValueChange={setFilterEmailStatus}>
+                <SelectTrigger data-testid="select-filter-email">
+                  <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  {ALL_SOURCES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="verified">Verificado</SelectItem>
+                  <SelectItem value="unverified">Sin verificar</SelectItem>
+                  <SelectItem value="likely to engage">Probable</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -336,21 +449,25 @@ export default function FindEnrich() {
             <div className="flex-1 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground" data-testid="text-searching">Buscando prospectos...</p>
+                <p className="text-sm text-muted-foreground" data-testid="text-searching">Buscando prospectos en Apollo...</p>
               </div>
             </div>
           )}
 
           {!isSearching && !hasSearched && (
             <div className="flex-1 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3 text-center max-w-md">
+              <div className="flex flex-col items-center gap-4 text-center max-w-md">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
                   <Search className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-lg font-medium" data-testid="text-empty-state">Encuentra prospectos ideales</h3>
                 <p className="text-sm text-muted-foreground">
-                  Usa el buscador AI para describir tu perfil de cliente ideal o aplica filtros para encontrar contactos relevantes
+                  Escribe algo como "CMO hoteles España" y el sistema buscará contactos reales en LinkedIn y bases de datos B2B
                 </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Linkedin className="w-4 h-4" />
+                  <span>Datos de LinkedIn vía Apollo.io</span>
+                </div>
               </div>
             </div>
           )}
@@ -358,27 +475,30 @@ export default function FindEnrich() {
           {!isSearching && hasSearched && (
             <>
               <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <span className="text-sm text-muted-foreground" data-testid="text-result-count">
-                    {filteredLeads.length} resultados encontrados
+                    {filteredResults.length} resultados {totalResults > filteredResults.length && `de ${totalResults} total`}
                   </span>
                 </div>
-                {selectedLeads.size > 0 && (
+                {selectedPeople.size > 0 && (
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm text-muted-foreground">
-                      {selectedLeads.size} seleccionados
+                    <span className="text-sm font-medium text-foreground">
+                      {selectedPeople.size} seleccionados
                     </span>
+                    <Button
+                      data-testid="button-save-to-list"
+                      size="sm"
+                      onClick={() => {
+                        setListName(searchQuery ? `Búsqueda: ${searchQuery}` : "Nueva lista");
+                        setSaveDialogOpen(true);
+                      }}
+                    >
+                      <ListPlus className="w-3.5 h-3.5 mr-1.5" />
+                      Guardar en Lista
+                    </Button>
                     <Button data-testid="button-enrich-selected" size="sm" variant="outline">
-                      <Zap className="w-3.5 h-3.5 mr-1" />
+                      <Zap className="w-3.5 h-3.5 mr-1.5" />
                       Enriquecer
-                    </Button>
-                    <Button data-testid="button-add-to-list" size="sm" variant="outline">
-                      <UserPlus className="w-3.5 h-3.5 mr-1" />
-                      Añadir a Lista
-                    </Button>
-                    <Button data-testid="button-start-campaign" size="sm">
-                      <Send className="w-3.5 h-3.5 mr-1" />
-                      Iniciar Campaña
                     </Button>
                   </div>
                 )}
@@ -392,7 +512,7 @@ export default function FindEnrich() {
                         <th className="text-left p-3 w-10">
                           <Checkbox
                             data-testid="checkbox-select-all"
-                            checked={filteredLeads.length > 0 && selectedLeads.size === filteredLeads.length}
+                            checked={filteredResults.length > 0 && selectedPeople.size === filteredResults.length}
                             onCheckedChange={toggleAll}
                           />
                         </th>
@@ -401,59 +521,97 @@ export default function FindEnrich() {
                         <th className="text-left p-3 font-medium text-muted-foreground">Empresa</th>
                         <th className="text-left p-3 font-medium text-muted-foreground">Email</th>
                         <th className="text-left p-3 font-medium text-muted-foreground">Teléfono</th>
-                        <th className="text-left p-3 font-medium text-muted-foreground">Score</th>
-                        <th className="text-left p-3 font-medium text-muted-foreground">Enriquecimiento</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">LinkedIn</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredLeads.map((lead) => {
-                        const emailStatus = getEmailStatus(lead);
-                        return (
-                          <tr
-                            key={lead.id}
-                            data-testid={`row-lead-${lead.id}`}
-                            className="border-b last:border-b-0 hover-elevate"
-                          >
-                            <td className="p-3">
-                              <Checkbox
-                                data-testid={`checkbox-lead-${lead.id}`}
-                                checked={selectedLeads.has(lead.id)}
-                                onCheckedChange={() => toggleLead(lead.id)}
-                              />
-                            </td>
-                            <td className="p-3">
-                              <span className="font-medium" data-testid={`text-name-${lead.id}`}>{lead.name}</span>
-                            </td>
-                            <td className="p-3 text-muted-foreground" data-testid={`text-title-${lead.id}`}>
-                              {lead.title}
-                            </td>
-                            <td className="p-3">
-                              <div className="flex flex-col">
-                                <span data-testid={`text-company-${lead.id}`}>{lead.company}</span>
-                                <span className="text-xs text-muted-foreground">{lead.country}</span>
+                      {filteredResults.map((person) => (
+                        <tr
+                          key={person.id}
+                          data-testid={`row-person-${person.id}`}
+                          className={`border-b last:border-b-0 hover:bg-muted/30 transition-colors ${selectedPeople.has(person.id) ? "bg-primary/5" : ""}`}
+                        >
+                          <td className="p-3">
+                            <Checkbox
+                              data-testid={`checkbox-person-${person.id}`}
+                              checked={selectedPeople.has(person.id)}
+                              onCheckedChange={() => togglePerson(person.id)}
+                            />
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0">
+                                {person.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                               </div>
-                            </td>
-                            <td className="p-3">
+                              <div>
+                                <span className="font-medium text-foreground" data-testid={`text-name-${person.id}`}>{person.name}</span>
+                                <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <Globe className="w-3 h-3" />
+                                  {person.city && `${person.city}, `}{person.country}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <span className="text-muted-foreground" data-testid={`text-title-${person.id}`}>{person.title}</span>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1">
+                                <Building2 className="w-3 h-3 text-muted-foreground" />
+                                <span data-testid={`text-company-${person.id}`}>{person.organization?.name || "-"}</span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {person.organization?.industry && (
+                                  <span className="text-[11px] text-muted-foreground">{person.organization.industry}</span>
+                                )}
+                                {person.organization?.estimated_num_employees ? (
+                                  <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
+                                    <Users className="w-3 h-3" />
+                                    {person.organization.estimated_num_employees}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            {person.email ? (
                               <div className="flex flex-col gap-1">
-                                <span className="text-xs" data-testid={`text-email-${lead.id}`}>{lead.email}</span>
-                                <EmailStatusBadge status={emailStatus} />
+                                <span className="text-xs text-foreground" data-testid={`text-email-${person.id}`}>{person.email}</span>
+                                <EmailStatusBadge status={person.email_status} />
                               </div>
-                            </td>
-                            <td className="p-3 text-muted-foreground text-xs" data-testid={`text-phone-${lead.id}`}>
-                              {lead.phone}
-                            </td>
-                            <td className="p-3">
-                              <ScoreBadge score={lead.score} />
-                            </td>
-                            <td className="p-3">
-                              <EnrichmentProgress confidence={lead.enrichmentConfidence} />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      {filteredLeads.length === 0 && (
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <span className="text-xs text-muted-foreground" data-testid={`text-phone-${person.id}`}>
+                              {person.phone || "-"}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            {person.linkedin_url ? (
+                              <a
+                                href={person.linkedin_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                data-testid={`link-linkedin-${person.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Linkedin className="w-3.5 h-3.5" />
+                                Perfil
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredResults.length === 0 && (
                         <tr>
-                          <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                          <td colSpan={7} className="p-8 text-center text-muted-foreground">
                             No se encontraron resultados con los filtros actuales
                           </td>
                         </tr>
@@ -466,6 +624,49 @@ export default function FindEnrich() {
           )}
         </div>
       </div>
+
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Guardar en lista</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nombre de la lista</label>
+              <Input
+                data-testid="input-list-name"
+                placeholder="Ej: CMO Hoteles España"
+                value={listName}
+                onChange={(e) => setListName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSaveToList(); }}
+              />
+            </div>
+            <div className="rounded-lg bg-muted/50 p-3">
+              <p className="text-sm text-foreground font-medium">{selectedContacts.length} contactos seleccionados</p>
+              <div className="mt-2 space-y-1 max-h-[200px] overflow-y-auto">
+                {selectedContacts.slice(0, 10).map((p) => (
+                  <div key={p.id} className="flex items-center justify-between text-xs py-1">
+                    <span className="text-foreground">{p.name}</span>
+                    <span className="text-muted-foreground">{p.organization?.name || ""}</span>
+                  </div>
+                ))}
+                {selectedContacts.length > 10 && (
+                  <p className="text-xs text-muted-foreground mt-1">y {selectedContacts.length - 10} más...</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)} data-testid="button-cancel-save">
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveToList} disabled={isSaving || !listName.trim()} data-testid="button-confirm-save">
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <ListPlus className="w-4 h-4 mr-1.5" />}
+              Crear lista
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
