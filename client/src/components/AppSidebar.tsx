@@ -1,20 +1,37 @@
 import { useLocation, Link } from "wouter";
 import {
-  LayoutDashboard,
+  Activity,
+  Inbox,
   Search,
+  List,
   Users,
-  Mail,
+  Building2,
+  Send,
+  BarChart3,
+  UserCircle,
+  Bot,
+  Plug,
   Settings,
   Sun,
   Moon,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
-const navItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/discovery", label: "Discovery", icon: Search },
-  { path: "/leads", label: "Leads", icon: Users },
-  { path: "/sequences", label: "Secuencias", icon: Mail },
+const mainNavItems = [
+  { path: "/", label: "Actividad", icon: Activity },
+  { path: "/inbox", label: "Inbox", icon: Inbox },
+  { path: "/find", label: "Buscar y Enriquecer", icon: Search },
+  { path: "/lists", label: "Listas", icon: List },
+  { path: "/contacts", label: "Contactos", icon: Users },
+  { path: "/companies", label: "Empresas", icon: Building2 },
+  { path: "/campaigns", label: "Campañas", icon: Send },
+  { path: "/analytics", label: "Analíticas", icon: BarChart3 },
+];
+
+const settingsNavItems = [
+  { path: "/identities", label: "Identidades", icon: UserCircle },
+  { path: "/playbook", label: "AI Playbook", icon: Bot },
+  { path: "/integrations", label: "Integraciones", icon: Plug },
   { path: "/settings", label: "Configuración", icon: Settings },
 ];
 
@@ -27,44 +44,57 @@ export function AppSidebar() {
     return location.startsWith(path);
   };
 
+  const renderNavItem = (item: typeof mainNavItems[0]) => {
+    const active = isActive(item.path);
+    return (
+      <Link key={item.path} href={item.path}>
+        <div
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+            active
+              ? "bg-sidebar-primary/20 text-sidebar-primary"
+              : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          }`}
+          data-testid={`nav-${item.label.toLowerCase().replace(/\s/g, "-")}`}
+        >
+          <item.icon className="w-4 h-4" />
+          <span className="text-[13px] font-medium">{item.label}</span>
+        </div>
+      </Link>
+    );
+  };
+
   return (
     <aside
-      className="fixed left-0 top-0 bottom-0 w-[240px] bg-sidebar border-r border-sidebar-border flex flex-col z-50"
+      className="fixed left-0 top-0 bottom-0 w-[220px] bg-sidebar border-r border-sidebar-border flex flex-col z-50"
       data-testid="sidebar"
     >
-      <div className="p-5">
-        <img src="/logo-fideltour.png" alt="Fideltour" className="h-7 brightness-0 invert" data-testid="img-logo" />
+      <div className="p-4 pb-3">
+        <img src="/logo-fideltour.png" alt="Fideltour" className="h-6 brightness-0 invert" data-testid="img-logo" />
       </div>
 
-      <nav className="flex-1 px-3 py-2 space-y-1">
-        {navItems.map((item) => {
-          const active = isActive(item.path);
-          return (
-            <Link key={item.path} href={item.path}>
-              <div
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-                  active
-                    ? "bg-sidebar-primary/20 text-sidebar-primary"
-                    : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                }`}
-                data-testid={`nav-${item.label.toLowerCase().replace(/\s/g, "-")}`}
-              >
-                <item.icon className="w-[18px] h-[18px]" />
-                <span className="text-sm font-medium">{item.label}</span>
-              </div>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
+        {mainNavItems.map(renderNavItem)}
+
+        <div className="border-t border-sidebar-border my-2" />
+
+        {settingsNavItems.map(renderNavItem)}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="px-3 py-2 border-t border-sidebar-border">
+        <div className="px-3 py-2 rounded-lg bg-sidebar-accent/50">
+          <p className="text-[11px] font-medium text-sidebar-foreground/90">12.000 créditos</p>
+          <p className="text-[10px] text-sidebar-foreground/50">Se renuevan en 7 días</p>
+        </div>
+      </div>
+
+      <div className="px-2 pb-3">
         <button
           onClick={toggleTheme}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
           data-testid="button-theme-toggle"
         >
-          {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
-          <span className="text-sm font-medium">{theme === "dark" ? "Modo Claro" : "Modo Oscuro"}</span>
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          <span className="text-[12px] font-medium">{theme === "dark" ? "Modo Claro" : "Modo Oscuro"}</span>
         </button>
       </div>
     </aside>

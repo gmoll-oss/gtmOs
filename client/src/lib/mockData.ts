@@ -1623,3 +1623,300 @@ export function getLeadExclusionChecks(lead: Lead): ExclusionCheckResult[] {
     { rule: "Cuenta estratégica", passed: true, reason: null, source: "local" },
   ];
 }
+
+export interface Company {
+  id: string;
+  name: string;
+  domain: string;
+  website: string;
+  industry: string;
+  country: string;
+  city: string;
+  employees: number;
+  source: string;
+  enrichmentStatus: "pending" | "enriched" | "partial" | "failed";
+  contactIds: string[];
+  discoveredAt: string;
+}
+
+export interface ProspectList {
+  id: string;
+  name: string;
+  contactCount: number;
+  source: "search" | "import" | "ai" | "manual";
+  contactIds: string[];
+  createdAt: string;
+}
+
+export interface Identity {
+  id: string;
+  name: string;
+  email: string;
+  smtpHost: string;
+  smtpPort: number;
+  dailyLimit: number;
+  sentToday: number;
+  warmupEnabled: boolean;
+  warmupProgress: number;
+  status: "active" | "paused" | "warming_up";
+  createdAt: string;
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  status: "active" | "paused" | "draft" | "completed";
+  steps: CampaignStep[];
+  enrolledCount: number;
+  totalSent: number;
+  totalOpened: number;
+  totalReplied: number;
+  totalBounced: number;
+  identityId: string;
+  listIds: string[];
+  createdAt: string;
+}
+
+export interface CampaignStep {
+  id: string;
+  order: number;
+  type: "email" | "follow_up" | "wait" | "condition" | "breakup";
+  delayDays: number;
+  subject: string;
+  body: string;
+  conditionField?: string;
+  conditionYesBranch?: string;
+  conditionNoBranch?: string;
+  sent: number;
+  opened: number;
+  replied: number;
+  bounced: number;
+}
+
+export interface InboxThread {
+  id: string;
+  leadId: string;
+  leadName: string;
+  leadCompany: string;
+  campaignId: string;
+  aiTag: "meeting_requested" | "interested" | "not_interested" | "auto_reply" | "question" | "out_of_office" | null;
+  unread: boolean;
+  lastMessageAt: string;
+  messages: InboxMessage[];
+}
+
+export interface InboxMessage {
+  id: string;
+  direction: "outbound" | "inbound";
+  subject: string;
+  body: string;
+  timestamp: string;
+  aiGenerated?: boolean;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: "discovery" | "enrichment" | "email_sent" | "email_replied" | "campaign_started" | "sync" | "exclusion" | "contact_added";
+  description: string;
+  leadName?: string;
+  companyName?: string;
+  timestamp: string;
+  metadata: Record<string, string>;
+}
+
+export interface AIPlaybookData {
+  companyName: string;
+  website: string;
+  linkedIn: string;
+  industry: string;
+  description: string;
+  productsServices: string[];
+  valuePropositions: string[];
+  icpDefinition: string;
+  competitors: string[];
+  testimonials: { name: string; role: string; company: string; quote: string }[];
+  aiVariables: { name: string; description: string; source: string }[];
+}
+
+export const companies: Company[] = [
+  { id: "comp-001", name: "Gran Hotel Barcelona", domain: "granhotelbarcelona.com", website: "https://granhotelbarcelona.com", industry: "Hospitality", country: "España", city: "Barcelona", employees: 120, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-001"], discoveredAt: "2026-01-18T09:00:00Z" },
+  { id: "comp-002", name: "Hotel Arte Madrid", domain: "hotelartemadrid.es", website: "https://hotelartemadrid.es", industry: "Hospitality", country: "España", city: "Madrid", employees: 85, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-002"], discoveredAt: "2026-01-20T11:00:00Z" },
+  { id: "comp-003", name: "Boutique Hotel Valencia", domain: "boutiquevalencia.com", website: "https://boutiquevalencia.com", industry: "Hospitality", country: "España", city: "Valencia", employees: 45, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-003"], discoveredAt: "2026-01-22T08:00:00Z" },
+  { id: "comp-004", name: "Playa Resort Cancún", domain: "playaresort.mx", website: "https://playaresort.mx", industry: "Resorts", country: "México", city: "Cancún", employees: 200, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-004"], discoveredAt: "2026-01-25T10:00:00Z" },
+  { id: "comp-005", name: "Hacienda Hotel Cartagena", domain: "haciendahotel.co", website: "https://haciendahotel.co", industry: "Hospitality", country: "Colombia", city: "Cartagena", employees: 70, source: "Directorios sectoriales", enrichmentStatus: "partial", contactIds: ["lead-005"], discoveredAt: "2026-01-28T09:00:00Z" },
+  { id: "comp-006", name: "Algarve Beach Resort", domain: "algarveresort.pt", website: "https://algarveresort.pt", industry: "Resorts", country: "Portugal", city: "Faro", employees: 150, source: "Turismo de Portugal", enrichmentStatus: "pending", contactIds: ["lead-006"], discoveredAt: "2026-02-05T10:00:00Z" },
+  { id: "comp-007", name: "Sierra Hotel & Spa", domain: "sierrahotel.mx", website: "https://sierrahotel.mx", industry: "Hospitality", country: "México", city: "Ciudad de México", employees: 95, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-007"], discoveredAt: "2026-01-30T08:00:00Z" },
+  { id: "comp-008", name: "Palacio Hoteles", domain: "palaciohoteles.es", website: "https://palaciohoteles.es", industry: "Hospitality", country: "España", city: "Sevilla", employees: 180, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-008"], discoveredAt: "2026-01-16T09:00:00Z" },
+  { id: "comp-009", name: "Costa del Sol Resort", domain: "costadelsol.es", website: "https://costadelsol.es", industry: "Resorts", country: "España", city: "Málaga", employees: 200, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-014"], discoveredAt: "2026-01-19T10:00:00Z" },
+  { id: "comp-010", name: "Urban Hotel Collection", domain: "urbanhotel.es", website: "https://urbanhotel.es", industry: "Hospitality", country: "España", city: "Madrid", employees: 320, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-021"], discoveredAt: "2026-01-15T09:00:00Z" },
+  { id: "comp-011", name: "Riviera Maya Resort", domain: "rivieramaya.mx", website: "https://rivieramaya.mx", industry: "Resorts", country: "México", city: "Playa del Carmen", employees: 250, source: "Google Search", enrichmentStatus: "enriched", contactIds: ["lead-011"], discoveredAt: "2026-01-26T11:00:00Z" },
+  { id: "comp-012", name: "Lisboa Grand Hotel", domain: "lisboagrand.pt", website: "https://lisboagrand.pt", industry: "Hospitality", country: "Portugal", city: "Lisboa", employees: 110, source: "Turismo de Portugal", enrichmentStatus: "enriched", contactIds: ["lead-010"], discoveredAt: "2026-02-08T10:00:00Z" },
+];
+
+export const prospectLists: ProspectList[] = [
+  { id: "list-001", name: "Hoteles Boutique España", contactCount: 12, source: "search", contactIds: ["lead-001", "lead-002", "lead-003", "lead-008", "lead-012", "lead-014", "lead-017", "lead-018", "lead-021", "lead-025", "lead-027", "lead-030"], createdAt: "2026-01-15T10:00:00Z" },
+  { id: "list-002", name: "Resorts LATAM", contactCount: 8, source: "search", contactIds: ["lead-004", "lead-005", "lead-007", "lead-009", "lead-011", "lead-016", "lead-019", "lead-028"], createdAt: "2026-01-20T10:00:00Z" },
+  { id: "list-003", name: "Hoteles Portugal", contactCount: 5, source: "search", contactIds: ["lead-006", "lead-010", "lead-015", "lead-020", "lead-023"], createdAt: "2026-02-01T10:00:00Z" },
+  { id: "list-004", name: "Directores Generales España", contactCount: 4, source: "ai", contactIds: ["lead-001", "lead-014", "lead-025", "lead-027"], createdAt: "2026-02-10T10:00:00Z" },
+];
+
+export const identities: Identity[] = [
+  { id: "id-001", name: "Equipo Ventas", email: "ventas@fideltour.com", smtpHost: "smtp.fideltour.com", smtpPort: 587, dailyLimit: 100, sentToday: 34, warmupEnabled: true, warmupProgress: 95, status: "active", createdAt: "2026-01-01T10:00:00Z" },
+  { id: "id-002", name: "Partnerships", email: "partnerships@fideltour.com", smtpHost: "smtp.fideltour.com", smtpPort: 587, dailyLimit: 50, sentToday: 12, warmupEnabled: true, warmupProgress: 78, status: "active", createdAt: "2026-01-05T10:00:00Z" },
+  { id: "id-003", name: "Growth Team", email: "growth@fideltour.com", smtpHost: "smtp.fideltour.com", smtpPort: 587, dailyLimit: 75, sentToday: 0, warmupEnabled: true, warmupProgress: 45, status: "warming_up", createdAt: "2026-02-15T10:00:00Z" },
+];
+
+export const campaigns: Campaign[] = [
+  {
+    id: "camp-001", name: "Outreach Hoteles España", status: "active",
+    steps: [
+      { id: "cs-001-1", order: 1, type: "email", delayDays: 0, subject: "Incrementa la fidelización de tus huéspedes con {empresa}", body: "Hola {nombre},\n\nSoy del equipo de Fideltour y ayudamos a hoteles como {empresa} a incrementar sus reservas directas y fidelización de huéspedes.\n\nHe visto que {empresa} tiene una presencia sólida en {ciudad} y creo que podríamos ayudaros a maximizar el valor de cada huésped.\n\n¿Te interesaría una demo de 15 minutos?\n\nSaludos", sent: 45, opened: 32, replied: 8, bounced: 2 },
+      { id: "cs-001-2", order: 2, type: "wait", delayDays: 3, subject: "", body: "", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-001-3", order: 3, type: "condition", delayDays: 0, subject: "", body: "", conditionField: "replied", conditionYesBranch: "stop", conditionNoBranch: "continue", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-001-4", order: 4, type: "follow_up", delayDays: 0, subject: "Re: Incrementa la fidelización de tus huéspedes con {empresa}", body: "Hola {nombre},\n\nQuería hacer seguimiento de mi email anterior. Hoteles similares a {empresa} han logrado aumentar un 23% sus reservas directas con nuestra plataforma.\n\n¿Tienes 15 minutos esta semana?\n\nSaludos", sent: 35, opened: 22, replied: 5, bounced: 1 },
+      { id: "cs-001-5", order: 5, type: "wait", delayDays: 5, subject: "", body: "", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-001-6", order: 6, type: "follow_up", delayDays: 0, subject: "Caso de éxito en tu zona - {empresa}", body: "Hola {nombre},\n\nTe comparto un caso de éxito de un hotel en {ciudad} que incrementó su revenue un 18% con nuestro programa de fidelización.\n\n¿Te gustaría ver cómo aplicarlo en {empresa}?\n\nQuedo atento,\nSaludos", sent: 28, opened: 18, replied: 4, bounced: 0 },
+      { id: "cs-001-7", order: 7, type: "wait", delayDays: 7, subject: "", body: "", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-001-8", order: 8, type: "breakup", delayDays: 0, subject: "Última oportunidad - {empresa}", body: "Hola {nombre},\n\nEntiendo que ahora puede no ser el momento. Te dejo la puerta abierta por si en el futuro {empresa} quiere explorar cómo maximizar la fidelización de huéspedes.\n\nNo volveré a molestarte. Si cambias de opinión, aquí estaré.\n\nSaludos", sent: 20, opened: 12, replied: 2, bounced: 0 },
+    ],
+    enrolledCount: 14, totalSent: 128, totalOpened: 84, totalReplied: 19, totalBounced: 3, identityId: "id-001", listIds: ["list-001"], createdAt: "2026-01-10T10:00:00Z",
+  },
+  {
+    id: "camp-002", name: "Outreach Resorts LATAM", status: "active",
+    steps: [
+      { id: "cs-002-1", order: 1, type: "email", delayDays: 0, subject: "Fidelización para resorts: más reservas directas en {empresa}", body: "Hola {nombre},\n\nEn Fideltour trabajamos con resorts en toda Latinoamérica para aumentar reservas directas y reducir dependencia de OTAs.\n\n{empresa} en {ciudad} tiene un gran potencial. ¿Te gustaría ver cómo lo hacemos?\n\nSaludos", sent: 28, opened: 19, replied: 5, bounced: 1 },
+      { id: "cs-002-2", order: 2, type: "wait", delayDays: 4, subject: "", body: "", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-002-3", order: 3, type: "condition", delayDays: 0, subject: "", body: "", conditionField: "replied", conditionYesBranch: "stop", conditionNoBranch: "continue", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-002-4", order: 4, type: "follow_up", delayDays: 0, subject: "Re: Fidelización para resorts - {empresa}", body: "Hola {nombre},\n\nSeguimiento rápido. Resorts como {empresa} suelen depender demasiado de las OTAs. Con Fideltour hemos ayudado a reducir esa dependencia hasta un 30%.\n\n¿Agenda una llamada de 15 min?\n\nSaludos", sent: 22, opened: 14, replied: 3, bounced: 0 },
+      { id: "cs-002-5", order: 5, type: "wait", delayDays: 5, subject: "", body: "", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-002-6", order: 6, type: "breakup", delayDays: 0, subject: "Cerrando el ciclo - {empresa}", body: "Hola {nombre},\n\nNo quiero ser insistente. Si en algún momento {empresa} quiere explorar la fidelización de huéspedes, aquí estaré.\n\n¡Mucho éxito!\n\nSaludos", sent: 10, opened: 6, replied: 1, bounced: 0 },
+    ],
+    enrolledCount: 8, totalSent: 76, totalOpened: 49, totalReplied: 11, totalBounced: 1, identityId: "id-002", listIds: ["list-002"], createdAt: "2026-01-20T10:00:00Z",
+  },
+  {
+    id: "camp-003", name: "Re-engagement Inactivos", status: "draft",
+    steps: [
+      { id: "cs-003-1", order: 1, type: "email", delayDays: 0, subject: "Novedades en Fideltour para {empresa}", body: "Hola {nombre},\n\nHace un tiempo hablamos sobre cómo Fideltour podría ayudar a {empresa}. Hemos lanzado nuevas funcionalidades que creo te interesarán.\n\n¿Tienes un momento para una actualización rápida?\n\nSaludos", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-003-2", order: 2, type: "wait", delayDays: 5, subject: "", body: "", sent: 0, opened: 0, replied: 0, bounced: 0 },
+      { id: "cs-003-3", order: 3, type: "breakup", delayDays: 0, subject: "Último contacto - {empresa}", body: "Hola {nombre},\n\nEntiendo que los tiempos no siempre coinciden. Te deseo lo mejor con {empresa} y quedo a disposición.\n\nSaludos", sent: 0, opened: 0, replied: 0, bounced: 0 },
+    ],
+    enrolledCount: 0, totalSent: 0, totalOpened: 0, totalReplied: 0, totalBounced: 0, identityId: "id-001", listIds: [], createdAt: "2026-02-20T10:00:00Z",
+  },
+];
+
+export const inboxThreads: InboxThread[] = [
+  {
+    id: "thread-001", leadId: "lead-001", leadName: "Carlos Martínez", leadCompany: "Gran Hotel Barcelona", campaignId: "camp-001", aiTag: "meeting_requested", unread: false, lastMessageAt: "2026-02-13T10:45:00Z",
+    messages: [
+      { id: "msg-001-1", direction: "outbound", subject: "Incrementa la fidelización de tus huéspedes con Gran Hotel Barcelona", body: "Hola Carlos,\n\nSoy del equipo de Fideltour y ayudamos a hoteles como Gran Hotel Barcelona a incrementar sus reservas directas y fidelización de huéspedes.\n\nHe visto que Gran Hotel Barcelona tiene una presencia sólida en Barcelona y creo que podríamos ayudaros a maximizar el valor de cada huésped.\n\n¿Te interesaría una demo de 15 minutos?\n\nSaludos", timestamp: "2026-02-09T09:30:00Z" },
+      { id: "msg-001-2", direction: "outbound", subject: "Re: Incrementa la fidelización de tus huéspedes con Gran Hotel Barcelona", body: "Hola Carlos,\n\nQuería hacer seguimiento de mi email anterior. Hoteles similares a Gran Hotel Barcelona han logrado aumentar un 23% sus reservas directas con nuestra plataforma.\n\n¿Tienes 15 minutos esta semana?\n\nSaludos", timestamp: "2026-02-12T09:30:00Z" },
+      { id: "msg-001-3", direction: "inbound", subject: "Re: Incrementa la fidelización de tus huéspedes con Gran Hotel Barcelona", body: "Hola,\n\nGracias por el seguimiento. Me interesa mucho lo que comentas. Estamos buscando exactamente esto para mejorar nuestras reservas directas.\n\n¿Podemos agendar una demo para la semana que viene? Martes o miércoles me vendrían bien.\n\nSaludos,\nCarlos Martínez\nDirector General\nGran Hotel Barcelona", timestamp: "2026-02-13T10:45:00Z" },
+    ],
+  },
+  {
+    id: "thread-002", leadId: "lead-002", leadName: "Ana López Ruiz", leadCompany: "Hotel Arte Madrid", campaignId: "camp-001", aiTag: "interested", unread: true, lastMessageAt: "2026-02-11T09:20:00Z",
+    messages: [
+      { id: "msg-002-1", direction: "outbound", subject: "Incrementa la fidelización de tus huéspedes con Hotel Arte Madrid", body: "Hola Ana,\n\nSoy del equipo de Fideltour...", timestamp: "2026-02-10T09:30:00Z" },
+      { id: "msg-002-2", direction: "inbound", subject: "Re: Incrementa la fidelización de tus huéspedes con Hotel Arte Madrid", body: "Hola,\n\nInteresante propuesta. Actualmente estamos evaluando varias opciones de fidelización. ¿Me podrías enviar más información sobre casos de éxito en hoteles boutique?\n\nGracias,\nAna López\nRevenue Manager", timestamp: "2026-02-11T09:20:00Z" },
+    ],
+  },
+  {
+    id: "thread-003", leadId: "lead-014", leadName: "Patricia Navarro", leadCompany: "Costa del Sol Resort", campaignId: "camp-001", aiTag: "meeting_requested", unread: true, lastMessageAt: "2026-02-20T14:30:00Z",
+    messages: [
+      { id: "msg-003-1", direction: "outbound", subject: "Incrementa la fidelización de tus huéspedes con Costa del Sol Resort", body: "Hola Patricia,\n\nSoy del equipo de Fideltour...", timestamp: "2026-02-15T09:30:00Z" },
+      { id: "msg-003-2", direction: "outbound", subject: "Re: Incrementa la fidelización con Costa del Sol Resort", body: "Hola Patricia,\n\nQuería hacer seguimiento...", timestamp: "2026-02-18T09:30:00Z" },
+      { id: "msg-003-3", direction: "inbound", subject: "Re: Incrementa la fidelización con Costa del Sol Resort", body: "Buenos días,\n\nLlevo tiempo queriendo implementar un programa de fidelización en el resort. Me encantaría ver una demo.\n\n¿Tienen disponibilidad el jueves por la mañana?\n\nPatricia Navarro\nDirectora General\nCosta del Sol Resort", timestamp: "2026-02-20T14:30:00Z" },
+    ],
+  },
+  {
+    id: "thread-004", leadId: "lead-004", leadName: "María García Hernández", leadCompany: "Playa Resort Cancún", campaignId: "camp-002", aiTag: "interested", unread: false, lastMessageAt: "2026-02-15T11:00:00Z",
+    messages: [
+      { id: "msg-004-1", direction: "outbound", subject: "Fidelización para resorts: más reservas directas en Playa Resort Cancún", body: "Hola María,\n\nEn Fideltour trabajamos con resorts...", timestamp: "2026-02-14T09:30:00Z" },
+      { id: "msg-004-2", direction: "inbound", subject: "Re: Fidelización para resorts - Playa Resort Cancún", body: "Hola,\n\nEstamos muy interesados. Las OTAs nos están comiendo el margen. ¿Cuánto tardaría la implementación?\n\nMaría García\nCEO\nPlaya Resort Cancún", timestamp: "2026-02-15T11:00:00Z" },
+    ],
+  },
+  {
+    id: "thread-005", leadId: "lead-027", leadName: "Gonzalo Muñoz", leadCompany: "Hotel Capital Madrid", campaignId: "camp-001", aiTag: "question", unread: true, lastMessageAt: "2026-02-19T16:20:00Z",
+    messages: [
+      { id: "msg-005-1", direction: "outbound", subject: "Incrementa la fidelización de tus huéspedes con Hotel Capital Madrid", body: "Hola Gonzalo,\n\nSoy del equipo de Fideltour...", timestamp: "2026-02-17T09:30:00Z" },
+      { id: "msg-005-2", direction: "inbound", subject: "Re: Fidelización Hotel Capital Madrid", body: "Buenas tardes,\n\n¿Qué integraciones tienen con los PMS? Nosotros usamos Opera Cloud.\n\nGonzalo Muñoz\nCEO\nHotel Capital Madrid", timestamp: "2026-02-19T16:20:00Z" },
+    ],
+  },
+  {
+    id: "thread-006", leadId: "lead-011", leadName: "Fernando Díaz", leadCompany: "Riviera Maya Resort", campaignId: "camp-002", aiTag: "not_interested", unread: false, lastMessageAt: "2026-02-18T10:15:00Z",
+    messages: [
+      { id: "msg-006-1", direction: "outbound", subject: "Fidelización para resorts: Riviera Maya Resort", body: "Hola Fernando...", timestamp: "2026-02-14T09:30:00Z" },
+      { id: "msg-006-2", direction: "outbound", subject: "Re: Fidelización para resorts - Riviera Maya", body: "Hola Fernando, seguimiento rápido...", timestamp: "2026-02-17T09:30:00Z" },
+      { id: "msg-006-3", direction: "inbound", subject: "Re: Fidelización para resorts - Riviera Maya", body: "Hola,\n\nGracias pero en este momento no nos interesa. Ya tenemos un programa de fidelización implementado.\n\nSaludos,\nFernando Díaz", timestamp: "2026-02-18T10:15:00Z" },
+    ],
+  },
+  {
+    id: "thread-007", leadId: "lead-003", leadName: "Javier Ruiz Sánchez", leadCompany: "Boutique Hotel Valencia", campaignId: "camp-001", aiTag: "auto_reply", unread: false, lastMessageAt: "2026-02-16T08:00:00Z",
+    messages: [
+      { id: "msg-007-1", direction: "outbound", subject: "Incrementa la fidelización con Boutique Hotel Valencia", body: "Hola Javier...", timestamp: "2026-02-15T09:30:00Z" },
+      { id: "msg-007-2", direction: "inbound", subject: "Respuesta automática: Fuera de oficina", body: "Estoy fuera de la oficina hasta el 25 de febrero. Para asuntos urgentes contactar con recepción.\n\nSaludos,\nJavier Ruiz", timestamp: "2026-02-16T08:00:00Z" },
+    ],
+  },
+];
+
+export const activityFeed: ActivityItem[] = [
+  { id: "act-001", type: "email_replied", description: "Patricia Navarro ha solicitado una reunión", leadName: "Patricia Navarro", companyName: "Costa del Sol Resort", timestamp: "2026-02-20T14:30:00Z", metadata: { campaignId: "camp-001" } },
+  { id: "act-002", type: "enrichment", description: "8 contactos enriquecidos en la lista 'Hoteles Boutique España'", companyName: "Varios", timestamp: "2026-02-20T12:00:00Z", metadata: { listId: "list-001" } },
+  { id: "act-003", type: "email_sent", description: "12 emails enviados en campaña 'Outreach Hoteles España'", timestamp: "2026-02-20T09:30:00Z", metadata: { campaignId: "camp-001" } },
+  { id: "act-004", type: "email_replied", description: "Gonzalo Muñoz ha preguntado sobre integraciones PMS", leadName: "Gonzalo Muñoz", companyName: "Hotel Capital Madrid", timestamp: "2026-02-19T16:20:00Z", metadata: { campaignId: "camp-001" } },
+  { id: "act-005", type: "sync", description: "Pablo Martín sincronizado con Zoho CRM (ZL-4829310)", leadName: "Pablo Martín", companyName: "Urban Hotel Collection", timestamp: "2026-02-22T11:00:00Z", metadata: {} },
+  { id: "act-006", type: "discovery", description: "45 nuevas empresas descubiertas en búsqueda 'Hoteles Boutique España'", timestamp: "2026-02-23T09:00:00Z", metadata: { searchJobId: "sj-001" } },
+  { id: "act-007", type: "exclusion", description: "Laura Méndez excluida - Cliente actual en Zoho CRM", leadName: "Laura Méndez", companyName: "Sierra Hotel & Spa", timestamp: "2026-02-10T15:30:00Z", metadata: {} },
+  { id: "act-008", type: "campaign_started", description: "Campaña 'Outreach Resorts LATAM' activada con 8 contactos", timestamp: "2026-01-20T10:30:00Z", metadata: { campaignId: "camp-002" } },
+  { id: "act-009", type: "contact_added", description: "4 contactos añadidos a lista 'Directores Generales España'", timestamp: "2026-02-10T10:00:00Z", metadata: { listId: "list-004" } },
+  { id: "act-010", type: "email_replied", description: "María García interesada en reducir dependencia de OTAs", leadName: "María García Hernández", companyName: "Playa Resort Cancún", timestamp: "2026-02-15T11:00:00Z", metadata: { campaignId: "camp-002" } },
+  { id: "act-011", type: "enrichment", description: "Adriana Blanco enriquecida con éxito (Clearbit)", leadName: "Adriana Blanco", companyName: "Maya Resort Tulum", timestamp: "2026-02-22T09:00:00Z", metadata: {} },
+  { id: "act-012", type: "sync", description: "Carlos Martínez sincronizado con Zoho CRM (ZL-4829103)", leadName: "Carlos Martínez", companyName: "Gran Hotel Barcelona", timestamp: "2026-02-15T08:30:00Z", metadata: {} },
+  { id: "act-013", type: "discovery", description: "28 empresas descubiertas en búsqueda 'Cadenas Medianas LATAM'", timestamp: "2026-02-23T10:00:00Z", metadata: { searchJobId: "sj-002" } },
+  { id: "act-014", type: "email_sent", description: "8 emails enviados en campaña 'Outreach Resorts LATAM'", timestamp: "2026-02-19T09:30:00Z", metadata: { campaignId: "camp-002" } },
+  { id: "act-015", type: "exclusion", description: "Beatriz Almeida excluida - Do Not Contact en Zoho", leadName: "Beatriz Almeida", companyName: "Cascais Boutique Hotel", timestamp: "2026-02-12T14:00:00Z", metadata: {} },
+];
+
+export const aiPlaybook: AIPlaybookData = {
+  companyName: "Fideltour",
+  website: "https://www.fideltour.com",
+  linkedIn: "https://www.linkedin.com/company/fideltour",
+  industry: "Hospitality Technology / SaaS",
+  description: "Fideltour es una plataforma de fidelización y CRM diseñada específicamente para la industria hotelera. Ayudamos a hoteles independientes y cadenas a incrementar sus reservas directas, reducir la dependencia de OTAs y maximizar el valor de cada huésped a través de programas de fidelización personalizados.",
+  productsServices: [
+    "Programa de fidelización white-label para hoteles",
+    "Motor de reservas directas con incentivos",
+    "CRM hotelero con segmentación de huéspedes",
+    "Automatización de marketing por email",
+    "Integración con PMS (Opera, Mews, Cloudbeds)",
+    "Dashboard de analíticas de huéspedes",
+  ],
+  valuePropositions: [
+    "Incremento del 23% en reservas directas de media",
+    "Reducción del 30% en dependencia de OTAs",
+    "ROI positivo en los primeros 3 meses",
+    "Implementación en menos de 2 semanas",
+    "Sin costes de setup ni permanencia",
+  ],
+  icpDefinition: "Hoteles independientes y cadenas medianas (30-500 habitaciones) en España, Portugal y Latinoamérica, con presencia en OTAs, que buscan incrementar reservas directas y fidelizar huéspedes. Decision makers: Director General, Revenue Manager, Director Comercial, CMO.",
+  competitors: ["Revinate", "Cendyn", "Profitroom", "The Hotels Network", "Bookassist"],
+  testimonials: [
+    { name: "María Sánchez", role: "Directora General", company: "Hotel Boutique Barcelona", quote: "Con Fideltour hemos aumentado nuestras reservas directas un 28% en solo 4 meses." },
+    { name: "Roberto López", role: "Revenue Manager", company: "Resort Costa del Sol", quote: "La mejor inversión que hemos hecho. El programa de fidelización se paga solo." },
+  ],
+  aiVariables: [
+    { name: "pain_point", description: "Principal dolor del prospecto identificado por IA", source: "Website + LinkedIn" },
+    { name: "tech_stack", description: "PMS y herramientas tecnológicas que usa el hotel", source: "Website crawling" },
+    { name: "ota_dependency", description: "Nivel estimado de dependencia de OTAs", source: "Booking.com + Google Hotels" },
+    { name: "recent_news", description: "Noticias recientes sobre el hotel o cadena", source: "Google News" },
+  ],
+};
+
+export const AI_TAG_CONFIG: Record<string, { label: string; color: string; bgClass: string; textClass: string }> = {
+  meeting_requested: { label: "Reunión solicitada", color: "#22c55e", bgClass: "bg-green-100 dark:bg-green-900/40", textClass: "text-green-700 dark:text-green-300" },
+  interested: { label: "Interesado", color: "#25CAD2", bgClass: "bg-teal-100 dark:bg-teal-900/40", textClass: "text-teal-700 dark:text-teal-300" },
+  not_interested: { label: "No interesado", color: "#ef4444", bgClass: "bg-red-100 dark:bg-red-900/40", textClass: "text-red-700 dark:text-red-300" },
+  auto_reply: { label: "Auto-respuesta", color: "#6b7280", bgClass: "bg-gray-100 dark:bg-gray-800", textClass: "text-gray-700 dark:text-gray-300" },
+  question: { label: "Pregunta", color: "#f59e0b", bgClass: "bg-amber-100 dark:bg-amber-900/40", textClass: "text-amber-700 dark:text-amber-300" },
+  out_of_office: { label: "Fuera de oficina", color: "#94a3b8", bgClass: "bg-slate-100 dark:bg-slate-800", textClass: "text-slate-700 dark:text-slate-300" },
+};
