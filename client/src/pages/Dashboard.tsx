@@ -1,8 +1,7 @@
-import { Users, Search, Mail, Settings, TrendingUp, Shield, RefreshCw, Zap, Clock, CheckCircle2, XCircle, ArrowRight, Play, Pause } from "lucide-react";
+import { Users, Zap, Shield, RefreshCw, Mail, Search, TrendingUp, Clock, CheckCircle2, XCircle, ArrowRight, Play, Pause, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { leads, searchJobs, sequences, eventLogs, LEAD_STATUS_CONFIG, type LeadStatus } from "@/lib/mockData";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const PIPELINE_ORDER: LeadStatus[] = [
   "discovered", "qualified", "enriched", "eligible",
@@ -19,25 +18,8 @@ function getStatusCounts() {
   return counts;
 }
 
-function StatusIcon({ status }: { status: LeadStatus }) {
-  const iconClass = "w-4 h-4";
-  switch (status) {
-    case "discovered": return <Search className={iconClass} />;
-    case "qualified": return <CheckCircle2 className={iconClass} />;
-    case "enriched": return <Zap className={iconClass} />;
-    case "eligible": return <Shield className={iconClass} />;
-    case "in_sequence": return <Mail className={iconClass} />;
-    case "engaged": return <TrendingUp className={iconClass} />;
-    case "ready_to_sync": return <RefreshCw className={iconClass} />;
-    case "synced": return <CheckCircle2 className={iconClass} />;
-    case "excluded": return <XCircle className={iconClass} />;
-    case "archived": return <Clock className={iconClass} />;
-    default: return <Users className={iconClass} />;
-  }
-}
-
 function eventTypeIcon(type: string) {
-  const cls = "w-3.5 h-3.5";
+  const cls = "w-4 h-4";
   switch (type) {
     case "discovered": return <Search className={`${cls} text-slate-500 dark:text-slate-400`} />;
     case "qualified": return <CheckCircle2 className={`${cls} text-blue-500 dark:text-blue-400`} />;
@@ -56,6 +38,25 @@ function eventTypeIcon(type: string) {
   }
 }
 
+function eventTypeDotColor(type: string) {
+  switch (type) {
+    case "discovered": return "bg-slate-400";
+    case "qualified": return "bg-blue-400";
+    case "enriched": return "bg-violet-400";
+    case "excluded":
+    case "exclusion_check": return "bg-red-400";
+    case "enrolled":
+    case "email_sent": return "bg-teal-400";
+    case "email_opened": return "bg-amber-400";
+    case "email_replied": return "bg-emerald-400";
+    case "email_bounced": return "bg-red-400";
+    case "synced":
+    case "ready_to_sync": return "bg-green-400";
+    case "score_updated": return "bg-purple-400";
+    default: return "bg-muted-foreground";
+  }
+}
+
 function formatRelativeTime(timestamp: string) {
   const date = new Date(timestamp);
   return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" }) + " " +
@@ -63,7 +64,6 @@ function formatRelativeTime(timestamp: string) {
 }
 
 export default function Dashboard() {
-  const today = new Date().toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   const counts = getStatusCounts();
 
   const totalLeads = leads.length;
@@ -72,50 +72,41 @@ export default function Dashboard() {
   const excludedLeads = leads.filter((l) => l.excluded).length;
   const exclusionRate = totalLeads > 0 ? Math.round((excludedLeads / totalLeads) * 100) : 0;
   const syncedLeads = leads.filter((l) => l.zohoCrmSynced).length;
-  const syncRate = totalLeads > 0 ? Math.round((syncedLeads / totalLeads) * 100) : 0;
-  const activeSequences = sequences.filter((s) => s.status === "active").length;
 
   const kpis = [
-    { label: "Total Leads", value: totalLeads.toString(), icon: Users, desc: "en pipeline" },
-    { label: "Tasa Enriquecimiento", value: `${enrichmentRate}%`, icon: Zap, desc: `${enrichedLeads} de ${totalLeads}` },
-    { label: "Tasa Exclusión", value: `${exclusionRate}%`, icon: Shield, desc: `${excludedLeads} excluidos` },
-    { label: "Tasa Sincronización", value: `${syncRate}%`, icon: RefreshCw, desc: `${syncedLeads} sincronizados` },
-    { label: "Secuencias Activas", value: activeSequences.toString(), icon: Mail, desc: `de ${sequences.length} totales` },
+    { label: "Total Leads", value: totalLeads.toString(), icon: Users, sub: "en pipeline" },
+    { label: "Tasa Enriquecimiento", value: `${enrichmentRate}%`, icon: Zap, sub: `${enrichedLeads} de ${totalLeads}` },
+    { label: "Tasa Exclusión", value: `${exclusionRate}%`, icon: Shield, sub: `${excludedLeads} excluidos` },
+    { label: "Leads Sincronizados", value: syncedLeads.toString(), icon: RefreshCw, sub: `de ${totalLeads} totales` },
   ];
-
-  const pipelineData = PIPELINE_ORDER.map((status) => ({
-    name: LEAD_STATUS_CONFIG[status].label,
-    count: counts[status],
-    color: LEAD_STATUS_CONFIG[status].color,
-  }));
 
   const activeJobs = searchJobs.filter((j) => j.status === "active" || j.status === "paused");
 
   const recentEvents = [...eventLogs]
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    .slice(0, 10);
+    .slice(0, 8);
 
   const leadNameMap = new Map(leads.map((l) => [l.id, l.name]));
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground" data-testid="text-page-title">
-            Growth Orchestrator
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5 capitalize">{today}</p>
-        </div>
+      <div>
+        <h1 className="text-xl font-semibold text-foreground" data-testid="text-page-title">
+          Dashboard
+        </h1>
+        <p className="text-sm text-muted-foreground mt-0.5" data-testid="text-page-subtitle">
+          Resumen del pipeline de generación de leads
+        </p>
       </div>
 
-      <div className="grid grid-cols-5 gap-3" data-testid="kpi-cards">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="kpi-cards">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} className="p-4">
+          <Card key={kpi.label} className="p-5">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider truncate">{kpi.label}</p>
-                <p className="text-2xl font-bold text-foreground mt-1" data-testid={`text-kpi-${kpi.label.toLowerCase().replace(/\s+/g, "-")}`}>{kpi.value}</p>
-                <p className="text-xs text-muted-foreground mt-1">{kpi.desc}</p>
+                <p className="text-xs text-muted-foreground font-medium tracking-wide" data-testid={`text-kpi-label-${kpi.label.toLowerCase().replace(/\s+/g, "-")}`}>{kpi.label}</p>
+                <p className="text-2xl font-semibold text-foreground mt-1" data-testid={`text-kpi-${kpi.label.toLowerCase().replace(/\s+/g, "-")}`}>{kpi.value}</p>
+                <p className="text-xs text-muted-foreground mt-1">{kpi.sub}</p>
               </div>
               <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <kpi.icon className="w-4 h-4 text-primary" />
@@ -125,80 +116,60 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-5 gap-3" data-testid="pipeline-state-cards">
-        {PIPELINE_ORDER.map((status) => {
-          const cfg = LEAD_STATUS_CONFIG[status];
-          return (
-            <Card key={status} className="p-3">
-              <div className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${cfg.bgClass}`}>
-                  <StatusIcon status={status} />
+      <Card className="p-5" data-testid="pipeline-overview">
+        <h2 className="text-sm font-semibold text-foreground mb-4">Pipeline</h2>
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {PIPELINE_ORDER.map((status, i) => {
+            const cfg = LEAD_STATUS_CONFIG[status];
+            return (
+              <div key={status} className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md" data-testid={`pipeline-stage-${status}`}>
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: cfg.color }}
+                  />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{cfg.label}</span>
+                  <span className="text-sm font-semibold text-foreground" data-testid={`text-pipeline-count-${status}`}>{counts[status]}</span>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-lg font-bold text-foreground" data-testid={`text-pipeline-count-${status}`}>{counts[status]}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{cfg.label}</p>
-                </div>
+                {i < PIPELINE_ORDER.length - 1 && (
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+                )}
               </div>
-            </Card>
-          );
-        })}
-        <Card className="p-3">
-          <div className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${LEAD_STATUS_CONFIG.excluded.bgClass}`}>
-              <XCircle className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-lg font-bold text-foreground" data-testid="text-pipeline-count-excluded">{counts.excluded}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{LEAD_STATUS_CONFIG.excluded.label}</p>
+            );
+          })}
+          <div className="flex items-center gap-1 flex-shrink-0 ml-2 pl-2 border-l border-border">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md" data-testid="pipeline-stage-excluded">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: LEAD_STATUS_CONFIG.excluded.color }}
+              />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">{LEAD_STATUS_CONFIG.excluded.label}</span>
+              <span className="text-sm font-semibold text-foreground" data-testid="text-pipeline-count-excluded">{counts.excluded}</span>
             </div>
           </div>
-        </Card>
-      </div>
-
-      <Card className="p-5" data-testid="pipeline-funnel">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Flujo del Pipeline</h2>
-        <div className="w-full h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={pipelineData} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
-              <XAxis type="number" tick={{ fontSize: 12 }} className="fill-muted-foreground" />
-              <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} className="fill-muted-foreground" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                  color: "hsl(var(--foreground))",
-                  fontSize: 13,
-                }}
-                formatter={(value: number) => [`${value} leads`, "Cantidad"]}
-              />
-              <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
-                {pipelineData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
         </div>
       </Card>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
           <Card className="p-5" data-testid="activity-feed">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Actividad Reciente</h2>
-            <div className="space-y-3">
-              {recentEvents.map((ev) => (
-                <div key={ev.id} className="flex items-start gap-3" data-testid={`activity-item-${ev.id}`}>
-                  <div className="w-7 h-7 rounded-full bg-background flex items-center justify-center flex-shrink-0 mt-0.5">
-                    {eventTypeIcon(ev.type)}
+            <h2 className="text-sm font-semibold text-foreground mb-4">Actividad Reciente</h2>
+            <div className="space-y-0">
+              {recentEvents.map((ev, i) => (
+                <div
+                  key={ev.id}
+                  className={`flex items-start gap-3 py-3 ${i < recentEvents.length - 1 ? "border-b border-border" : ""}`}
+                  data-testid={`activity-item-${ev.id}`}
+                >
+                  <div className="flex flex-col items-center mt-1.5">
+                    <span className={`w-2 h-2 rounded-full ${eventTypeDotColor(ev.type)}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground/80">
-                      <span className="font-medium text-foreground">{leadNameMap.get(ev.leadId) || ev.leadId}</span>
-                      {" — "}
-                      {ev.description}
+                    <p className="text-[13px] text-foreground">
+                      <span className="font-medium">{leadNameMap.get(ev.leadId) || ev.leadId}</span>
+                      <span className="text-muted-foreground"> — {ev.description}</span>
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{formatRelativeTime(ev.timestamp)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{formatRelativeTime(ev.timestamp)}</p>
                   </div>
                 </div>
               ))}
@@ -206,83 +177,73 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div>
           <Card className="p-5" data-testid="active-search-jobs">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Jobs de Descubrimiento</h2>
-            <div className="space-y-3">
-              {activeJobs.map((job) => (
-                <div key={job.id} className="p-3 rounded-md bg-background/60" data-testid={`search-job-${job.id}`}>
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-foreground truncate">{job.name}</span>
-                    <Badge variant={job.status === "active" ? "default" : "secondary"} className="text-[10px]" data-testid={`badge-job-status-${job.id}`}>
-                      {job.status === "active" ? <Play className="w-3 h-3 mr-1" /> : <Pause className="w-3 h-3 mr-1" />}
-                      {job.status === "active" ? "Activo" : "Pausado"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                    <span>{job.totalDiscovered} descubiertos</span>
-                    <span>{job.totalQualified} cualificados</span>
-                  </div>
-                  {job.lastRunAt && (
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Última ejecución: {formatRelativeTime(job.lastRunAt)}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-5" data-testid="sequence-summary">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Secuencias</h2>
-            <div className="space-y-3">
-              {sequences.map((seq) => (
-                <div key={seq.id} className="p-3 rounded-md bg-background/60" data-testid={`sequence-${seq.id}`}>
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-foreground truncate">{seq.name}</span>
-                    <Badge
-                      variant={seq.status === "active" ? "default" : "secondary"}
-                      className="text-[10px]"
-                    >
-                      {seq.status === "active" ? "Activa" : seq.status === "paused" ? "Pausada" : "Borrador"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                    <span>{seq.enrolledCount} inscritos</span>
-                    <span>{seq.totalSent} enviados</span>
-                    <span>{seq.totalReplied} respuestas</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-5" data-testid="quick-stats">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Resumen General</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center gap-2">
-                <span className="text-xs text-muted-foreground">Score Promedio</span>
-                <span className="text-sm font-medium text-foreground">{Math.round(leads.reduce((s, l) => s + l.score, 0) / totalLeads)}</span>
-              </div>
-              <div className="flex justify-between items-center gap-2">
-                <span className="text-xs text-muted-foreground">ICP Promedio</span>
-                <span className="text-sm font-medium text-foreground">{Math.round(leads.reduce((s, l) => s + l.icpScore, 0) / totalLeads)}</span>
-              </div>
-              <div className="flex justify-between items-center gap-2">
-                <span className="text-xs text-muted-foreground">Confianza Enriq. Prom.</span>
-                <span className="text-sm font-medium text-foreground">{Math.round(leads.reduce((s, l) => s + l.enrichmentConfidence, 0) / totalLeads * 100)}%</span>
-              </div>
-              <div className="flex justify-between items-center gap-2">
-                <span className="text-xs text-muted-foreground">En Secuencia</span>
-                <span className="text-sm font-medium text-foreground">{counts.in_sequence + counts.engaged}</span>
-              </div>
-              <div className="flex justify-between items-center gap-2">
-                <span className="text-xs text-muted-foreground">Listos para Sync</span>
-                <span className="text-sm font-medium text-foreground">{counts.ready_to_sync}</span>
-              </div>
-            </div>
+            <h2 className="text-sm font-semibold text-foreground mb-4">Jobs de Descubrimiento</h2>
+            <table className="w-full text-left" data-testid="search-jobs-table">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-[11px] font-medium text-muted-foreground pb-2">Nombre</th>
+                  <th className="text-[11px] font-medium text-muted-foreground pb-2 text-right">Desc.</th>
+                  <th className="text-[11px] font-medium text-muted-foreground pb-2 text-right">Cual.</th>
+                  <th className="text-[11px] font-medium text-muted-foreground pb-2 text-right">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeJobs.map((job) => (
+                  <tr key={job.id} className="border-b border-border last:border-b-0" data-testid={`search-job-${job.id}`}>
+                    <td className="py-2.5 text-[13px] font-medium text-foreground truncate max-w-[120px]">{job.name}</td>
+                    <td className="py-2.5 text-[13px] text-muted-foreground text-right">{job.totalDiscovered}</td>
+                    <td className="py-2.5 text-[13px] text-muted-foreground text-right">{job.totalQualified}</td>
+                    <td className="py-2.5 text-right">
+                      <Badge
+                        variant={job.status === "active" ? "default" : "secondary"}
+                        className="text-[10px] rounded-full"
+                        data-testid={`badge-job-status-${job.id}`}
+                      >
+                        {job.status === "active" ? "Activo" : "Pausado"}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </Card>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="sequence-stats">
+        {sequences.map((seq) => (
+          <Card key={seq.id} className="p-5" data-testid={`sequence-${seq.id}`}>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="text-[13px] font-medium text-foreground truncate">{seq.name}</span>
+              <Badge
+                variant={seq.status === "active" ? "default" : "secondary"}
+                className="text-[10px] rounded-full flex-shrink-0"
+              >
+                {seq.status === "active" ? "Activa" : seq.status === "paused" ? "Pausada" : "Borrador"}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <div>
+                <p className="text-lg font-semibold text-foreground">{seq.enrolledCount}</p>
+                <p className="text-[11px] text-muted-foreground">Inscritos</p>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-foreground">{seq.totalSent}</p>
+                <p className="text-[11px] text-muted-foreground">Enviados</p>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-foreground">{seq.totalSent > 0 ? Math.round((seq.totalOpened / seq.totalSent) * 100) : 0}%</p>
+                <p className="text-[11px] text-muted-foreground">Abiertos</p>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-foreground">{seq.totalSent > 0 ? Math.round((seq.totalReplied / seq.totalSent) * 100) : 0}%</p>
+                <p className="text-[11px] text-muted-foreground">Respuestas</p>
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );

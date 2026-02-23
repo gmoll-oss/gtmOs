@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, Play, Pause, Square, Eye, Globe, Factory, Tag, Users, Clock, Calendar, ChevronRight, X, Zap, MapPin, Briefcase } from "lucide-react";
+import { Search, Plus, Play, Pause, Square, Eye, Globe, Factory, Users, Clock, Calendar, ChevronRight, Zap, MapPin, Briefcase, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { searchJobs, leads, type SearchJob } from "@/lib/mockData";
+import { searchJobs, leads, LEAD_STATUS_CONFIG, type SearchJob } from "@/lib/mockData";
 
-const JOB_STATUS_CONFIG: Record<string, { label: string; bgClass: string; textClass: string }> = {
-  active: { label: "Activo", bgClass: "bg-emerald-100 dark:bg-emerald-900/40", textClass: "text-emerald-700 dark:text-emerald-300" },
-  paused: { label: "Pausado", bgClass: "bg-amber-100 dark:bg-amber-900/40", textClass: "text-amber-700 dark:text-amber-300" },
-  completed: { label: "Completado", bgClass: "bg-blue-100 dark:bg-blue-900/40", textClass: "text-blue-700 dark:text-blue-300" },
-  draft: { label: "Borrador", bgClass: "bg-slate-100 dark:bg-slate-800", textClass: "text-slate-700 dark:text-slate-300" },
+const JOB_STATUS_DOT: Record<string, string> = {
+  active: "bg-emerald-500",
+  paused: "bg-amber-500",
+  completed: "bg-blue-500",
+  draft: "bg-slate-400 dark:bg-slate-500",
+};
+
+const JOB_STATUS_LABEL: Record<string, string> = {
+  active: "Activo",
+  paused: "Pausado",
+  completed: "Completado",
+  draft: "Borrador",
 };
 
 function formatDate(dateStr: string | null): string {
@@ -22,12 +29,14 @@ function formatDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const config = JOB_STATUS_CONFIG[status] || JOB_STATUS_CONFIG.draft;
+function StatusDot({ status }: { status: string }) {
+  const dot = JOB_STATUS_DOT[status] || JOB_STATUS_DOT.draft;
+  const label = JOB_STATUS_LABEL[status] || status;
   return (
-    <Badge variant="outline" className={`${config.bgClass} ${config.textClass} border-transparent`} data-testid={`badge-status-${status}`}>
-      {config.label}
-    </Badge>
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" data-testid={`badge-status-${status}`}>
+      <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+      {label}
+    </span>
   );
 }
 
@@ -160,7 +169,7 @@ export default function Discovery() {
           onEdit={() => handleEditJob(selectedJob)}
         />
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {jobs.map(job => (
             <JobCard
               key={job.id}
@@ -172,9 +181,9 @@ export default function Discovery() {
             />
           ))}
           {jobs.length === 0 && (
-            <Card className="p-8 text-center">
-              <Search className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground" data-testid="text-empty-state">No hay trabajos de descubrimiento. Crea uno nuevo para empezar.</p>
+            <Card className="p-10 text-center">
+              <Search className="w-8 h-8 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="text-sm text-muted-foreground" data-testid="text-empty-state">No hay trabajos de descubrimiento. Crea uno nuevo para empezar.</p>
             </Card>
           )}
         </div>
@@ -187,9 +196,9 @@ export default function Discovery() {
               {editingJob ? "Editar Trabajo" : "Nuevo Trabajo de Descubrimiento"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="job-name">Nombre</Label>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="job-name" className="text-xs text-muted-foreground">Nombre</Label>
               <Input
                 id="job-name"
                 value={formData.name}
@@ -199,8 +208,8 @@ export default function Discovery() {
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="job-geo">Geografía (separar con comas)</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="job-geo" className="text-xs text-muted-foreground">Geografía</Label>
                 <Input
                   id="job-geo"
                   value={formData.geo}
@@ -209,8 +218,8 @@ export default function Discovery() {
                   data-testid="input-job-geo"
                 />
               </div>
-              <div>
-                <Label htmlFor="job-industry">Industria (separar con comas)</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="job-industry" className="text-xs text-muted-foreground">Industria</Label>
                 <Input
                   id="job-industry"
                   value={formData.industry}
@@ -220,8 +229,8 @@ export default function Discovery() {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="job-keywords">Palabras clave (separar con comas)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="job-keywords" className="text-xs text-muted-foreground">Palabras clave (separar con comas)</Label>
               <Textarea
                 id="job-keywords"
                 value={formData.keywords}
@@ -231,8 +240,8 @@ export default function Discovery() {
                 data-testid="input-job-keywords"
               />
             </div>
-            <div>
-              <Label htmlFor="job-roles">Roles objetivo (separar con comas)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="job-roles" className="text-xs text-muted-foreground">Roles objetivo (separar con comas)</Label>
               <Input
                 id="job-roles"
                 value={formData.targetRoles}
@@ -242,8 +251,8 @@ export default function Discovery() {
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="job-limit">Límite diario</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="job-limit" className="text-xs text-muted-foreground">Límite diario</Label>
                 <Input
                   id="job-limit"
                   type="number"
@@ -252,8 +261,8 @@ export default function Discovery() {
                   data-testid="input-job-limit"
                 />
               </div>
-              <div>
-                <Label htmlFor="job-schedule">Programación</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="job-schedule" className="text-xs text-muted-foreground">Programación</Label>
                 <Select value={formData.schedule} onValueChange={v => setFormData(prev => ({ ...prev, schedule: v }))}>
                   <SelectTrigger data-testid="select-job-schedule">
                     <SelectValue />
@@ -267,8 +276,8 @@ export default function Discovery() {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label htmlFor="job-sources">Fuentes (separar con comas)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="job-sources" className="text-xs text-muted-foreground">Fuentes (separar con comas)</Label>
               <Input
                 id="job-sources"
                 value={formData.sources}
@@ -278,7 +287,7 @@ export default function Discovery() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setShowCreateModal(false)} data-testid="button-cancel-job">
               Cancelar
             </Button>
@@ -300,41 +309,44 @@ function JobCard({ job, onView, onToggleStatus, onStop, onEdit }: {
   onEdit: () => void;
 }) {
   return (
-    <Card className="p-4 hover-elevate" data-testid={`card-job-${job.id}`}>
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <Card className="p-5 hover-elevate cursor-pointer" onClick={onView} data-testid={`card-job-${job.id}`}>
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-sm" data-testid={`text-job-name-${job.id}`}>{job.name}</h3>
-            <StatusBadge status={job.status} />
+          <div className="flex items-center gap-3 flex-wrap">
+            <h3 className="text-sm font-semibold" data-testid={`text-job-name-${job.id}`}>{job.name}</h3>
+            <StatusDot status={job.status} />
           </div>
-          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
-            <span className="flex items-center gap-1">
-              <Globe className="w-3 h-3" />
-              {job.geo.join(", ")}
-            </span>
-            <span className="flex items-center gap-1">
-              <Factory className="w-3 h-3" />
-              {job.industry.join(", ")}
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="w-3 h-3" />
-              {job.targetRoles.length} roles
-            </span>
+
+          <div className="flex items-center gap-3 mt-2.5 flex-wrap">
+            {job.geo.map(g => (
+              <Badge key={g} variant="secondary" className="rounded-full text-[11px]" data-testid={`badge-geo-${g}`}>
+                <Globe className="w-3 h-3 mr-1 text-muted-foreground" />
+                {g}
+              </Badge>
+            ))}
+            {job.industry.map(i => (
+              <Badge key={i} variant="secondary" className="rounded-full text-[11px]" data-testid={`badge-industry-${i}`}>
+                <Factory className="w-3 h-3 mr-1 text-muted-foreground" />
+                {i}
+              </Badge>
+            ))}
           </div>
-          <div className="flex items-center gap-4 mt-2 text-xs flex-wrap">
-            <span className="text-muted-foreground">
-              Descubiertos: <span className="font-medium text-foreground">{job.totalDiscovered}</span>
+
+          <div className="flex items-center gap-5 mt-3 text-xs text-muted-foreground flex-wrap">
+            <span>
+              Descubiertos <span className="font-medium text-foreground ml-0.5">{job.totalDiscovered}</span>
             </span>
-            <span className="text-muted-foreground">
-              Cualificados: <span className="font-medium text-foreground">{job.totalQualified}</span>
+            <span>
+              Cualificados <span className="font-medium text-foreground ml-0.5">{job.totalQualified}</span>
             </span>
-            <span className="text-muted-foreground flex items-center gap-1">
+            <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {job.lastRunAt ? formatDate(job.lastRunAt) : "Sin ejecutar"}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+
+        <div className="flex items-center gap-1 shrink-0">
           {(job.status === "active" || job.status === "paused" || job.status === "draft") && (
             <Button
               size="icon"
@@ -361,12 +373,12 @@ function JobCard({ job, onView, onToggleStatus, onStop, onEdit }: {
             onClick={e => { e.stopPropagation(); onEdit(); }}
             data-testid={`button-edit-${job.id}`}
           >
-            <Tag className="w-4 h-4" />
+            <Pencil className="w-4 h-4" />
           </Button>
           <Button
             size="icon"
             variant="ghost"
-            onClick={onView}
+            onClick={e => { e.stopPropagation(); onView(); }}
             data-testid={`button-view-${job.id}`}
           >
             <Eye className="w-4 h-4" />
@@ -390,206 +402,185 @@ function JobDetailView({ job, jobLeads, onBack, onToggleStatus, onStop, onEdit }
     : 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="space-y-5">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <button onClick={onBack} className="hover:text-foreground transition-colors" data-testid="button-back-to-list">
           Discovery
         </button>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-foreground">{job.name}</span>
+        <span className="text-foreground font-medium">{job.name}</span>
       </div>
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-lg font-semibold" data-testid="text-job-detail-name">{job.name}</h2>
-            <StatusBadge status={job.status} />
+            <StatusDot status={job.status} />
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Creado el {formatDate(job.createdAt)}
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {(job.status === "active" || job.status === "paused" || job.status === "draft") && (
-            <Button variant="outline" onClick={onToggleStatus} data-testid="button-detail-toggle">
+            <Button variant="outline" size="sm" onClick={onToggleStatus} data-testid="button-detail-toggle">
               {job.status === "active" ? (
-                <><Pause className="w-4 h-4 mr-1.5" /> Pausar</>
+                <><Pause className="w-3.5 h-3.5 mr-1.5" /> Pausar</>
               ) : (
-                <><Play className="w-4 h-4 mr-1.5" /> Ejecutar</>
+                <><Play className="w-3.5 h-3.5 mr-1.5" /> Ejecutar</>
               )}
             </Button>
           )}
           {(job.status === "active" || job.status === "paused") && (
-            <Button variant="outline" onClick={onStop} data-testid="button-detail-stop">
-              <Square className="w-4 h-4 mr-1.5" /> Detener
+            <Button variant="outline" size="sm" onClick={onStop} data-testid="button-detail-stop">
+              <Square className="w-3.5 h-3.5 mr-1.5" /> Detener
             </Button>
           )}
-          <Button variant="outline" onClick={onEdit} data-testid="button-detail-edit">
-            <Tag className="w-4 h-4 mr-1.5" /> Editar
+          <Button variant="outline" size="sm" onClick={onEdit} data-testid="button-detail-edit">
+            <Pencil className="w-3.5 h-3.5 mr-1.5" /> Editar
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Descubiertos</p>
-          <p className="text-2xl font-bold mt-1" data-testid="text-stat-discovered">{job.totalDiscovered}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="p-5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Descubiertos</p>
+          <p className="text-2xl font-semibold mt-1" data-testid="text-stat-discovered">{job.totalDiscovered}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Cualificados</p>
-          <p className="text-2xl font-bold mt-1" data-testid="text-stat-qualified">{job.totalQualified}</p>
+        <Card className="p-5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Cualificados</p>
+          <p className="text-2xl font-semibold mt-1" data-testid="text-stat-qualified">{job.totalQualified}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Tasa de cualificación</p>
-          <p className="text-2xl font-bold mt-1" data-testid="text-stat-rate">{qualificationRate}%</p>
+        <Card className="p-5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Tasa Cualificación</p>
+          <p className="text-2xl font-semibold mt-1" data-testid="text-stat-rate">{qualificationRate}%</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Límite diario</p>
-          <p className="text-2xl font-bold mt-1" data-testid="text-stat-limit">{job.dailyLimit}/día</p>
+        <Card className="p-5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Límite Diario</p>
+          <p className="text-2xl font-semibold mt-1" data-testid="text-stat-limit">{job.dailyLimit}/día</p>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-4">
-          <h3 className="text-sm font-semibold mb-3">Configuración del Trabajo</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Geografía</p>
-                <div className="flex gap-1 flex-wrap mt-0.5">
-                  {job.geo.map(g => (
-                    <Badge key={g} variant="secondary" className="text-xs" data-testid={`badge-geo-${g}`}>{g}</Badge>
-                  ))}
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold mb-4">Criterios de Búsqueda</h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" /> Geografía
+              </p>
+              <div className="flex gap-1.5 flex-wrap">
+                {job.geo.map(g => (
+                  <Badge key={g} variant="secondary" className="rounded-full text-[11px]" data-testid={`badge-geo-${g}`}>{g}</Badge>
+                ))}
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Briefcase className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Industria</p>
-                <div className="flex gap-1 flex-wrap mt-0.5">
-                  {job.industry.map(i => (
-                    <Badge key={i} variant="secondary" className="text-xs" data-testid={`badge-industry-${i}`}>{i}</Badge>
-                  ))}
-                </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5" /> Industria
+              </p>
+              <div className="flex gap-1.5 flex-wrap">
+                {job.industry.map(i => (
+                  <Badge key={i} variant="secondary" className="rounded-full text-[11px]" data-testid={`badge-industry-${i}`}>{i}</Badge>
+                ))}
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Tag className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Palabras clave</p>
-                <div className="flex gap-1 flex-wrap mt-0.5">
-                  {job.keywords.map(k => (
-                    <Badge key={k} variant="secondary" className="text-xs" data-testid={`badge-keyword-${k}`}>{k}</Badge>
-                  ))}
-                </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                <Search className="w-3.5 h-3.5" /> Palabras Clave
+              </p>
+              <div className="flex gap-1.5 flex-wrap">
+                {job.keywords.map(k => (
+                  <Badge key={k} variant="secondary" className="rounded-full text-[11px]" data-testid={`badge-keyword-${k}`}>{k}</Badge>
+                ))}
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Users className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Roles objetivo</p>
-                <div className="flex gap-1 flex-wrap mt-0.5">
-                  {job.targetRoles.map(r => (
-                    <Badge key={r} variant="secondary" className="text-xs" data-testid={`badge-role-${r}`}>{r}</Badge>
-                  ))}
-                </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5" /> Roles Objetivo
+              </p>
+              <div className="flex gap-1.5 flex-wrap">
+                {job.targetRoles.map(r => (
+                  <Badge key={r} variant="secondary" className="rounded-full text-[11px]" data-testid={`badge-role-${r}`}>{r}</Badge>
+                ))}
               </div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
-          <h3 className="text-sm font-semibold mb-3">Programación y Fuentes</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Programación</p>
-                <p className="mt-0.5" data-testid="text-schedule">{job.schedule}</p>
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold mb-4">Programación y Fuentes</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" /> Programación
+              </span>
+              <span className="text-sm" data-testid="text-schedule">{job.schedule}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" /> Última ejecución
+              </span>
+              <span className="text-sm" data-testid="text-last-run">{formatDate(job.lastRunAt)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" /> Próxima ejecución
+              </span>
+              <span className="text-sm" data-testid="text-next-run">{formatDate(job.nextRunAt)}</span>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1.5">
+                <Zap className="w-3.5 h-3.5" /> Fuentes de datos
+              </p>
+              <div className="flex gap-1.5 flex-wrap">
+                {job.sources.map(s => (
+                  <Badge key={s} variant="secondary" className="rounded-full text-[11px]" data-testid={`badge-source-${s}`}>{s}</Badge>
+                ))}
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Última ejecución</p>
-                <p className="mt-0.5" data-testid="text-last-run">{formatDate(job.lastRunAt)}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Próxima ejecución</p>
-                <p className="mt-0.5" data-testid="text-next-run">{formatDate(job.nextRunAt)}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <Zap className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Fuentes de datos</p>
-                <div className="flex gap-1 flex-wrap mt-0.5">
-                  {job.sources.map(s => (
-                    <Badge key={s} variant="secondary" className="text-xs" data-testid={`badge-source-${s}`}>{s}</Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <Zap className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Rate limit</p>
-                <p className="mt-0.5" data-testid="text-rate-limit">{job.dailyLimit} prospectos/día</p>
-              </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5" /> Rate limit
+              </span>
+              <span className="text-sm" data-testid="text-rate-limit">{job.dailyLimit} prospectos/día</span>
             </div>
           </div>
         </Card>
       </div>
 
-      <Card className="p-4">
-        <h3 className="text-sm font-semibold mb-3">
-          Leads Descubiertos ({jobLeads.length})
+      <Card className="p-5">
+        <h3 className="text-sm font-semibold mb-4">
+          Leads Descubiertos <span className="text-muted-foreground font-normal">({jobLeads.length})</span>
         </h3>
         {jobLeads.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
-                  <th className="pb-2 pr-4">Nombre</th>
-                  <th className="pb-2 pr-4">Empresa</th>
-                  <th className="pb-2 pr-4">Email</th>
-                  <th className="pb-2 pr-4">País</th>
-                  <th className="pb-2 pr-4">Estado</th>
-                  <th className="pb-2">Score</th>
+                <tr className="border-b text-left">
+                  <th className="pb-2.5 pr-4 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Nombre</th>
+                  <th className="pb-2.5 pr-4 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Empresa</th>
+                  <th className="pb-2.5 pr-4 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Email</th>
+                  <th className="pb-2.5 pr-4 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">País</th>
+                  <th className="pb-2.5 pr-4 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Estado</th>
+                  <th className="pb-2.5 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Score</th>
                 </tr>
               </thead>
               <tbody>
                 {jobLeads.map(lead => {
-                  const statusCfg = {
-                    discovered: { label: "Descubierto", cls: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300" },
-                    qualified: { label: "Cualificado", cls: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" },
-                    enriched: { label: "Enriquecido", cls: "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300" },
-                    eligible: { label: "Elegible", cls: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300" },
-                    in_sequence: { label: "En Secuencia", cls: "bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300" },
-                    engaged: { label: "Contactado", cls: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300" },
-                    ready_to_sync: { label: "Listo Sync", cls: "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300" },
-                    synced: { label: "Sincronizado", cls: "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" },
-                    excluded: { label: "Excluido", cls: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300" },
-                    archived: { label: "Archivado", cls: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" },
-                  }[lead.status] || { label: lead.status, cls: "" };
-
+                  const statusCfg = LEAD_STATUS_CONFIG[lead.status];
                   return (
-                    <tr key={lead.id} className="border-b last:border-0" data-testid={`row-lead-${lead.id}`}>
-                      <td className="py-2 pr-4 font-medium">{lead.name}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">{lead.company}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">{lead.email}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">{lead.country}</td>
-                      <td className="py-2 pr-4">
-                        <Badge variant="outline" className={`border-transparent ${statusCfg.cls}`}>
+                    <tr key={lead.id} className="border-b last:border-0 hover-elevate" data-testid={`row-lead-${lead.id}`}>
+                      <td className="py-2.5 pr-4 text-sm font-medium">{lead.name}</td>
+                      <td className="py-2.5 pr-4 text-sm text-muted-foreground">{lead.company}</td>
+                      <td className="py-2.5 pr-4 text-sm text-muted-foreground">{lead.email}</td>
+                      <td className="py-2.5 pr-4 text-sm text-muted-foreground">{lead.country}</td>
+                      <td className="py-2.5 pr-4">
+                        <Badge variant="outline" className={`rounded-full border-transparent text-[11px] ${statusCfg.bgClass} ${statusCfg.textClass}`}>
                           {statusCfg.label}
                         </Badge>
                       </td>
-                      <td className="py-2 font-medium">{lead.score}</td>
+                      <td className="py-2.5 text-sm font-medium">{lead.score}</td>
                     </tr>
                   );
                 })}

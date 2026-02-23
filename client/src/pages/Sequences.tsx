@@ -30,7 +30,6 @@ import {
   ChevronUp,
   Clock,
   ArrowRight,
-  Users,
   Pencil,
   MailPlus,
   CornerDownRight,
@@ -38,23 +37,29 @@ import {
 } from "lucide-react";
 import { sequences as mockSequences, leads, type Sequence, type SequenceStep } from "@/lib/mockData";
 
-const STEP_TYPE_CONFIG: Record<string, { label: string; icon: typeof Mail; color: string; bgClass: string; textClass: string }> = {
-  email: { label: "Email Inicial", icon: MailPlus, color: "#3b82f6", bgClass: "bg-blue-100 dark:bg-blue-900/40", textClass: "text-blue-700 dark:text-blue-300" },
-  follow_up: { label: "Follow-up", icon: CornerDownRight, color: "#8b5cf6", bgClass: "bg-violet-100 dark:bg-violet-900/40", textClass: "text-violet-700 dark:text-violet-300" },
-  breakup: { label: "Breakup", icon: Flag, color: "#f97316", bgClass: "bg-orange-100 dark:bg-orange-900/40", textClass: "text-orange-700 dark:text-orange-300" },
+const STEP_TYPE_CONFIG: Record<string, { label: string; icon: typeof Mail; color: string }> = {
+  email: { label: "Email Inicial", icon: MailPlus, color: "#3b82f6" },
+  follow_up: { label: "Follow-up", icon: CornerDownRight, color: "#8b5cf6" },
+  breakup: { label: "Breakup", icon: Flag, color: "#f97316" },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; bgClass: string; textClass: string }> = {
-  active: { label: "Activa", bgClass: "bg-emerald-100 dark:bg-emerald-900/40", textClass: "text-emerald-700 dark:text-emerald-300" },
-  paused: { label: "Pausada", bgClass: "bg-amber-100 dark:bg-amber-900/40", textClass: "text-amber-700 dark:text-amber-300" },
-  draft: { label: "Borrador", bgClass: "bg-slate-100 dark:bg-slate-800", textClass: "text-slate-700 dark:text-slate-300" },
+const STATUS_DOT: Record<string, string> = {
+  active: "bg-emerald-500",
+  paused: "bg-amber-500",
+  draft: "bg-slate-400",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  active: "Activa",
+  paused: "Pausada",
+  draft: "Borrador",
 };
 
 const TEMPLATE_VARIABLES = ["{empresa}", "{nombre}", "{rol}", "{ciudad}", "{pain}", "{propuesta}"];
 
 function StepTimeline({ steps }: { steps: SequenceStep[] }) {
   return (
-    <div className="space-y-0">
+    <div className="relative">
       {steps.map((step, index) => {
         const config = STEP_TYPE_CONFIG[step.type] || STEP_TYPE_CONFIG.email;
         const Icon = config.icon;
@@ -63,54 +68,52 @@ function StepTimeline({ steps }: { steps: SequenceStep[] }) {
         const replyRate = totalActivity > 0 ? Math.round((step.replied / totalActivity) * 100) : 0;
 
         return (
-          <div key={step.id} className="relative" data-testid={`step-timeline-${step.id}`}>
+          <div key={step.id} className="relative flex gap-3 pb-5 last:pb-0" data-testid={`step-timeline-${step.id}`}>
             {index < steps.length - 1 && (
-              <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />
+              <div className="absolute left-[15px] top-[32px] bottom-0 w-px bg-border" />
             )}
-            <div className="flex gap-3 pb-4">
-              <div
-                className="w-10 h-10 rounded-md flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${config.color}15` }}
-              >
-                <Icon className="w-4 h-4" style={{ color: config.color }} />
+            <div
+              className="w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0 mt-0.5"
+              style={{ backgroundColor: `${config.color}12`, border: `1px solid ${config.color}25` }}
+            >
+              <Icon className="w-3.5 h-3.5" style={{ color: config.color }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium" style={{ color: config.color }}>
+                  {config.label}
+                </span>
+                {step.delayDays > 0 && (
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    +{step.delayDays}d
+                  </span>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className={`${config.bgClass} ${config.textClass} text-xs`}>
-                    {config.label}
-                  </Badge>
-                  {step.delayDays > 0 && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      +{step.delayDays} días
+              <p className="text-[13px] font-medium mt-0.5 truncate" data-testid={`text-step-subject-${step.id}`}>
+                {step.subject}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                {step.body.substring(0, 100)}...
+              </p>
+              {totalActivity > 0 && (
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Send className="w-3 h-3" /> {step.sent}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Eye className="w-3 h-3" /> {openRate}%
+                  </span>
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <MessageSquare className="w-3 h-3" /> {replyRate}%
+                  </span>
+                  {step.bounced > 0 && (
+                    <span className="text-[11px] text-red-500 dark:text-red-400 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> {step.bounced}
                     </span>
                   )}
                 </div>
-                <p className="text-sm font-medium mt-1 truncate" data-testid={`text-step-subject-${step.id}`}>
-                  {step.subject}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {step.body.substring(0, 120)}...
-                </p>
-                {totalActivity > 0 && (
-                  <div className="flex items-center gap-4 mt-2 flex-wrap">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Send className="w-3 h-3" /> {step.sent}
-                    </span>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Eye className="w-3 h-3" /> {step.opened} ({openRate}%)
-                    </span>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3" /> {step.replied} ({replyRate}%)
-                    </span>
-                    {step.bounced > 0 && (
-                      <span className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> {step.bounced}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
         );
@@ -121,25 +124,26 @@ function StepTimeline({ steps }: { steps: SequenceStep[] }) {
 
 function SequenceCard({ sequence, onEdit }: { sequence: Sequence; onEdit: (seq: Sequence) => void }) {
   const [expanded, setExpanded] = useState(false);
-  const statusConfig = STATUS_CONFIG[sequence.status] || STATUS_CONFIG.draft;
-  const enrolledLeads = leads.filter((l) => l.sequenceId === sequence.id);
   const openRate = sequence.totalSent > 0 ? Math.round((sequence.totalOpened / sequence.totalSent) * 100) : 0;
   const replyRate = sequence.totalSent > 0 ? Math.round((sequence.totalReplied / sequence.totalSent) * 100) : 0;
 
   return (
-    <Card className="p-4" data-testid={`card-sequence-${sequence.id}`}>
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+    <Card className="p-5" data-testid={`card-sequence-${sequence.id}`}>
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold" data-testid={`text-sequence-name-${sequence.id}`}>
+            <h3 className="text-[13px] font-semibold" data-testid={`text-sequence-name-${sequence.id}`}>
               {sequence.name}
             </h3>
-            <Badge className={`${statusConfig.bgClass} ${statusConfig.textClass} text-xs`} data-testid={`badge-sequence-status-${sequence.id}`}>
-              {statusConfig.label}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[sequence.status] || STATUS_DOT.draft}`} />
+              <span className="text-[11px] text-muted-foreground" data-testid={`badge-sequence-status-${sequence.id}`}>
+                {STATUS_LABEL[sequence.status] || "Borrador"}
+              </span>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {sequence.steps.length} pasos · Creada {new Date(sequence.createdAt).toLocaleDateString("es-ES")}
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {sequence.steps.length} pasos · {new Date(sequence.createdAt).toLocaleDateString("es-ES")}
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -163,66 +167,47 @@ function SequenceCard({ sequence, onEdit }: { sequence: Sequence; onEdit: (seq: 
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
-        <div className="text-center">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-4 pt-4 border-t">
+        <div>
           <p className="text-lg font-semibold" data-testid={`text-enrolled-${sequence.id}`}>{sequence.enrolledCount}</p>
           <p className="text-[11px] text-muted-foreground">Inscritos</p>
         </div>
-        <div className="text-center">
+        <div>
           <p className="text-lg font-semibold" data-testid={`text-sent-${sequence.id}`}>{sequence.totalSent}</p>
           <p className="text-[11px] text-muted-foreground">Enviados</p>
         </div>
-        <div className="text-center">
+        <div>
           <p className="text-lg font-semibold" data-testid={`text-open-rate-${sequence.id}`}>{openRate}%</p>
           <p className="text-[11px] text-muted-foreground">Apertura</p>
         </div>
-        <div className="text-center">
+        <div>
           <p className="text-lg font-semibold" data-testid={`text-reply-rate-${sequence.id}`}>{replyRate}%</p>
           <p className="text-[11px] text-muted-foreground">Respuesta</p>
         </div>
-        <div className="text-center">
-          <p className="text-lg font-semibold text-red-500 dark:text-red-400" data-testid={`text-bounced-${sequence.id}`}>{sequence.totalBounced}</p>
+        <div>
+          <p className="text-lg font-semibold" data-testid={`text-bounced-${sequence.id}`}>{sequence.totalBounced}</p>
           <p className="text-[11px] text-muted-foreground">Rebotados</p>
         </div>
       </div>
 
-      {enrolledLeads.length > 0 && (
-        <div className="mt-3 flex items-center gap-2 flex-wrap">
-          <Users className="w-3.5 h-3.5 text-muted-foreground" />
-          <div className="flex items-center gap-1 flex-wrap">
-            {enrolledLeads.slice(0, 4).map((lead) => (
-              <span key={lead.id} className="text-xs text-muted-foreground">
-                {lead.name.split(" ")[0]}
-              </span>
-            ))}
-            {enrolledLeads.length > 4 && (
-              <span className="text-xs text-muted-foreground">
-                +{enrolledLeads.length - 4} más
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      <Button
-        variant="ghost"
-        className="w-full mt-3 text-xs"
+      <button
+        className="flex items-center gap-1 text-[11px] text-muted-foreground mt-4 pt-3 border-t w-full justify-center"
         onClick={() => setExpanded(!expanded)}
         data-testid={`button-toggle-steps-${sequence.id}`}
       >
         {expanded ? (
           <>
-            <ChevronUp className="w-3.5 h-3.5 mr-1" /> Ocultar pasos
+            <ChevronUp className="w-3.5 h-3.5" /> Ocultar pasos
           </>
         ) : (
           <>
-            <ChevronDown className="w-3.5 h-3.5 mr-1" /> Ver pasos ({sequence.steps.length})
+            <ChevronDown className="w-3.5 h-3.5" /> Ver pasos ({sequence.steps.length})
           </>
         )}
-      </Button>
+      </button>
 
       {expanded && (
-        <div className="mt-3 pt-3 border-t">
+        <div className="mt-4 pt-3 border-t">
           <StepTimeline steps={sequence.steps} />
         </div>
       )}
@@ -258,11 +243,11 @@ function StepEditor({
           <span className="text-xs text-muted-foreground">días</span>
         </div>
       )}
-      <Card className="p-3">
+      <Card className="p-4">
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-          <Badge className={`${config.bgClass} ${config.textClass} text-xs`}>
+          <span className="text-xs font-medium" style={{ color: config.color }}>
             {config.label} {step.type === "follow_up" ? `#${index}` : ""}
-          </Badge>
+          </span>
           <Select
             value={step.type}
             onValueChange={(val) => onChange({ ...step, type: val as SequenceStep["type"] })}
@@ -289,7 +274,7 @@ function StepEditor({
             value={step.body}
             onChange={(e) => onChange({ ...step, body: e.target.value })}
             rows={5}
-            className="resize-none text-sm"
+            className="resize-none text-[13px]"
             data-testid={`textarea-body-${index}`}
           />
           <div className="flex items-center gap-1 flex-wrap">
@@ -298,7 +283,7 @@ function StepEditor({
               <Badge
                 key={v}
                 variant="secondary"
-                className="text-[10px] cursor-pointer"
+                className="text-[10px] rounded-full cursor-pointer"
                 onClick={() => onChange({ ...step, body: step.body + " " + v })}
                 data-testid={`badge-variable-${v}`}
               >
@@ -392,30 +377,30 @@ export default function Sequences() {
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-sequence">
-          <Plus className="w-4 h-4 mr-1" /> Nueva Secuencia
+          <Plus className="w-4 h-4 mr-1.5" /> Nueva Secuencia
         </Button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-semibold" data-testid="text-kpi-sequences">{sequencesList.length}</p>
-          <p className="text-xs text-muted-foreground mt-1">Secuencias</p>
+        <Card className="p-5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Secuencias</p>
+          <p className="text-2xl font-semibold mt-1" data-testid="text-kpi-sequences">{sequencesList.length}</p>
         </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-semibold" data-testid="text-kpi-enrolled">{totalEnrolled}</p>
-          <p className="text-xs text-muted-foreground mt-1">Inscritos Total</p>
+        <Card className="p-5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Inscritos Total</p>
+          <p className="text-2xl font-semibold mt-1" data-testid="text-kpi-enrolled">{totalEnrolled}</p>
         </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-semibold" data-testid="text-kpi-sent">{totalSent}</p>
-          <p className="text-xs text-muted-foreground mt-1">Emails Enviados</p>
+        <Card className="p-5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Emails Enviados</p>
+          <p className="text-2xl font-semibold mt-1" data-testid="text-kpi-sent">{totalSent}</p>
         </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-semibold" data-testid="text-kpi-reply-rate">{avgReplyRate}%</p>
-          <p className="text-xs text-muted-foreground mt-1">Tasa de Respuesta</p>
+        <Card className="p-5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Tasa de Respuesta</p>
+          <p className="text-2xl font-semibold mt-1" data-testid="text-kpi-reply-rate">{avgReplyRate}%</p>
         </Card>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {sequencesList.map((seq) => (
           <SequenceCard key={seq.id} sequence={seq} onEdit={handleEdit} />
         ))}
@@ -428,12 +413,12 @@ export default function Sequences() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
-              <label className="text-sm font-medium">Nombre de la secuencia</label>
+              <label className="text-[13px] font-medium">Nombre de la secuencia</label>
               <Input
                 placeholder="Ej: Outreach Hoteles Q2"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="mt-1"
+                className="mt-1.5"
                 data-testid="input-new-sequence-name"
               />
             </div>
@@ -459,20 +444,20 @@ export default function Sequences() {
           {editingSequence && (
             <div className="space-y-4 pt-2">
               <div>
-                <label className="text-sm font-medium">Nombre</label>
+                <label className="text-[13px] font-medium">Nombre</label>
                 <Input
                   value={editingSequence.name}
                   onChange={(e) =>
                     setEditingSequence({ ...editingSequence, name: e.target.value })
                   }
-                  className="mt-1"
+                  className="mt-1.5"
                   data-testid="input-edit-sequence-name"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                  <h3 className="text-sm font-semibold">Pasos de la secuencia</h3>
+                  <h3 className="text-[13px] font-semibold">Pasos de la secuencia</h3>
                   <Button
                     variant="outline"
                     size="sm"
@@ -494,7 +479,7 @@ export default function Sequences() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t">
+              <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button
                   variant="outline"
                   onClick={() => setEditingSequence(null)}
