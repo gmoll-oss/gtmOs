@@ -88,3 +88,4 @@ Discovered → Qualified → Enriched → Eligible → In Sequence → Engaged �
 - All data is mock/hardcoded - no API calls needed
 - Light and dark mode support
 - Reference: enginy.ai for complete product structure and UX patterns
+- Do NOT add credits/usage display to the sidebar - user has explicitly requested this not be added
