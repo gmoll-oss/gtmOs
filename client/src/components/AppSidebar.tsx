@@ -14,6 +14,7 @@ import {
   Settings,
   Sun,
   Moon,
+  Zap,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -81,7 +82,17 @@ export function AppSidebar() {
       </nav>
 
 
-      <div className="px-2 pb-3">
+      <div className="px-3 pb-2">
+        <div className="rounded-lg bg-sidebar-accent/50 p-2.5 mb-2" data-testid="credits-display">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[11px] font-semibold text-sidebar-foreground">12.450 créditos</span>
+          </div>
+          <div className="w-full h-1.5 rounded-full bg-sidebar-border overflow-hidden">
+            <div className="h-full rounded-full bg-primary" style={{ width: "62%" }} />
+          </div>
+          <p className="text-[10px] text-sidebar-foreground/50 mt-1">Renueva en 7 días</p>
+        </div>
         <button
           onClick={toggleTheme}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"

@@ -1912,6 +1912,61 @@ export const aiPlaybook: AIPlaybookData = {
   ],
 };
 
+export type EnrichmentQueueStatus = "processing" | "queued" | "completed" | "failed";
+
+export interface EnrichmentQueueItem {
+  id: string;
+  leadId: string;
+  leadName: string;
+  company: string;
+  status: EnrichmentQueueStatus;
+  providers: string[];
+  fieldsRequested: string[];
+  fieldsFound: string[];
+  confidence: number;
+  startedAt: string;
+  completedAt: string | null;
+  listName: string | null;
+  error: string | null;
+}
+
+export const ENRICHMENT_PROVIDERS = [
+  { id: "clearbit", name: "Clearbit", color: "#3B82F6", successRate: 87, avgConfidence: 0.91 },
+  { id: "hunter", name: "Hunter.io", color: "#F59E0B", successRate: 78, avgConfidence: 0.84 },
+  { id: "zoominfo", name: "ZoomInfo", color: "#8B5CF6", successRate: 82, avgConfidence: 0.88 },
+  { id: "snov", name: "Snov.io", color: "#10B981", successRate: 74, avgConfidence: 0.79 },
+  { id: "apollo", name: "Apollo.io", color: "#25CAD2", successRate: 85, avgConfidence: 0.90 },
+];
+
+export const enrichmentQueue: EnrichmentQueueItem[] = [
+  { id: "eq-001", leadId: "lead-009", leadName: "Diego Vargas", company: "Andino Hotel Bogotá", status: "processing", providers: ["Clearbit", "Hunter.io"], fieldsRequested: ["email", "phone", "title", "linkedin"], fieldsFound: ["email"], confidence: 0.45, startedAt: "2026-02-24T08:30:00Z", completedAt: null, listName: "Resorts LATAM", error: null },
+  { id: "eq-002", leadId: "lead-022", leadName: "Valentina Ríos", company: "Eco Hotel Santa Marta", status: "processing", providers: ["Apollo.io"], fieldsRequested: ["email", "phone", "title", "linkedin", "company"], fieldsFound: ["email", "title"], confidence: 0.52, startedAt: "2026-02-24T08:28:00Z", completedAt: null, listName: "Resorts LATAM", error: null },
+  { id: "eq-003", leadId: "lead-015", leadName: "Miguel Santos", company: "Porto Palace Hotel", status: "queued", providers: ["Clearbit"], fieldsRequested: ["email", "phone", "title"], fieldsFound: [], confidence: 0, startedAt: "2026-02-24T08:35:00Z", completedAt: null, listName: "Hoteles Portugal", error: null },
+  { id: "eq-004", leadId: "lead-029", leadName: "Hugo Ferreira", company: "Sintra Palace Hotel", status: "queued", providers: ["Hunter.io", "Snov.io"], fieldsRequested: ["email", "phone", "title", "linkedin"], fieldsFound: [], confidence: 0, startedAt: "2026-02-24T08:36:00Z", completedAt: null, listName: "Hoteles Portugal", error: null },
+  { id: "eq-005", leadId: "lead-023", leadName: "Marcos Oliveira", company: "Douro Valley Hotel", status: "queued", providers: ["Clearbit", "Apollo.io"], fieldsRequested: ["email", "phone", "title"], fieldsFound: [], confidence: 0, startedAt: "2026-02-24T08:37:00Z", completedAt: null, listName: "Hoteles Portugal", error: null },
+  { id: "eq-006", leadId: "lead-016", leadName: "Lucía Herrera", company: "Meridian Hotel Guadalajara", status: "queued", providers: ["ZoomInfo"], fieldsRequested: ["email", "phone", "title", "company"], fieldsFound: [], confidence: 0, startedAt: "2026-02-24T08:38:00Z", completedAt: null, listName: "Resorts LATAM", error: null },
+  { id: "eq-007", leadId: "lead-025", leadName: "Ramón Castillo", company: "Hotel Colonial Granada", status: "completed", providers: ["Clearbit", "Hunter.io"], fieldsRequested: ["email", "phone", "title", "linkedin", "company"], fieldsFound: ["email", "phone", "title", "linkedin", "company"], confidence: 0.84, startedAt: "2026-02-24T07:00:00Z", completedAt: "2026-02-24T07:02:00Z", listName: "Hoteles Boutique España", error: null },
+  { id: "eq-008", leadId: "lead-028", leadName: "Adriana Blanco", company: "Maya Resort Tulum", status: "completed", providers: ["Clearbit"], fieldsRequested: ["email", "phone", "title", "linkedin"], fieldsFound: ["email", "phone", "title", "linkedin"], confidence: 0.86, startedAt: "2026-02-24T06:50:00Z", completedAt: "2026-02-24T06:52:00Z", listName: "Resorts LATAM", error: null },
+  { id: "eq-009", leadId: "lead-013", leadName: "Andrés Ramírez", company: "Gran Colombia Hotel", status: "completed", providers: ["Hunter.io", "Snov.io"], fieldsRequested: ["email", "phone", "title"], fieldsFound: ["email", "title"], confidence: 0.80, startedAt: "2026-02-24T06:45:00Z", completedAt: "2026-02-24T06:48:00Z", listName: "Resorts LATAM", error: null },
+  { id: "eq-010", leadId: "lead-030", leadName: "Silvia Romero", company: "Azul Hotel Marbella", status: "completed", providers: ["Clearbit", "Apollo.io"], fieldsRequested: ["email", "phone", "title", "linkedin", "company"], fieldsFound: ["email", "phone", "title", "linkedin", "company"], confidence: 0.88, startedAt: "2026-02-24T06:30:00Z", completedAt: "2026-02-24T06:33:00Z", listName: "Hoteles Boutique España", error: null },
+  { id: "eq-011", leadId: "lead-024", leadName: "Daniela Fuentes", company: "Centro Histórico Hotel", status: "completed", providers: ["ZoomInfo"], fieldsRequested: ["email", "phone", "title", "company"], fieldsFound: ["email", "phone", "title", "company"], confidence: 0.87, startedAt: "2026-02-24T06:20:00Z", completedAt: "2026-02-24T06:22:00Z", listName: "Resorts LATAM", error: null },
+  { id: "eq-012", leadId: "lead-006", leadName: "Pedro Fernandes", company: "Algarve Beach Resort", status: "failed", providers: ["Hunter.io"], fieldsRequested: ["email", "phone", "title"], fieldsFound: [], confidence: 0, startedAt: "2026-02-24T06:00:00Z", completedAt: "2026-02-24T06:01:00Z", listName: "Hoteles Portugal", error: "Dominio no encontrado en la base de datos" },
+  { id: "eq-013", leadId: "lead-010", leadName: "Sofia Costa", company: "Lisboa Grand Hotel", status: "completed", providers: ["Hunter.io", "Clearbit"], fieldsRequested: ["email", "phone", "title", "linkedin"], fieldsFound: ["email", "phone", "title", "linkedin"], confidence: 0.90, startedAt: "2026-02-23T14:00:00Z", completedAt: "2026-02-23T14:03:00Z", listName: "Hoteles Portugal", error: null },
+  { id: "eq-014", leadId: "lead-017", leadName: "Ricardo Pérez", company: "Exclusive Resort Ibiza", status: "completed", providers: ["Clearbit", "Apollo.io"], fieldsRequested: ["email", "phone", "title", "linkedin", "company"], fieldsFound: ["email", "phone", "title", "linkedin"], confidence: 0.92, startedAt: "2026-02-23T13:00:00Z", completedAt: "2026-02-23T13:02:00Z", listName: "Hoteles Boutique España", error: null },
+  { id: "eq-015", leadId: "lead-005", leadName: "Roberto Silva Mejía", company: "Hacienda Hotel Cartagena", status: "completed", providers: ["Hunter.io", "Snov.io"], fieldsRequested: ["email", "phone", "title"], fieldsFound: ["email", "title", "phone"], confidence: 0.82, startedAt: "2026-02-23T12:00:00Z", completedAt: "2026-02-23T12:04:00Z", listName: "Resorts LATAM", error: null },
+  { id: "eq-016", leadId: "lead-019", leadName: "Alejandro Cruz", company: "Paradise Resort Los Cabos", status: "completed", providers: ["Clearbit"], fieldsRequested: ["email", "phone", "title", "linkedin"], fieldsFound: ["email", "phone", "title", "linkedin"], confidence: 0.89, startedAt: "2026-02-23T11:00:00Z", completedAt: "2026-02-23T11:02:00Z", listName: "Resorts LATAM", error: null },
+  { id: "eq-017", leadId: "lead-026", leadName: "Natalia Gómez", company: "Pacífico Hotel & Spa", status: "completed", providers: ["Apollo.io", "Hunter.io"], fieldsRequested: ["email", "phone", "title", "linkedin", "company"], fieldsFound: ["email", "phone", "title", "company"], confidence: 0.81, startedAt: "2026-02-23T10:00:00Z", completedAt: "2026-02-23T10:03:00Z", listName: "Resorts LATAM", error: null },
+  { id: "eq-018", leadId: "lead-011", leadName: "Fernando Díaz", company: "Riviera Maya Resort", status: "completed", providers: ["Clearbit"], fieldsRequested: ["email", "phone", "title", "linkedin"], fieldsFound: ["email", "phone", "title", "linkedin"], confidence: 0.91, startedAt: "2026-02-22T15:00:00Z", completedAt: "2026-02-22T15:01:00Z", listName: "Resorts LATAM", error: null },
+];
+
+export const ENRICHMENT_FIELD_LABELS: Record<string, string> = {
+  email: "Email",
+  phone: "Teléfono",
+  title: "Cargo",
+  linkedin: "LinkedIn",
+  company: "Empresa",
+};
+
 export const AI_TAG_CONFIG: Record<string, { label: string; color: string; bgClass: string; textClass: string }> = {
   meeting_requested: { label: "Reunión solicitada", color: "#22c55e", bgClass: "bg-green-100 dark:bg-green-900/40", textClass: "text-green-700 dark:text-green-300" },
   interested: { label: "Interesado", color: "#25CAD2", bgClass: "bg-teal-100 dark:bg-teal-900/40", textClass: "text-teal-700 dark:text-teal-300" },
