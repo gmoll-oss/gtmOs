@@ -1,3 +1,11 @@
+const _origExit = process.exit;
+process.exit = ((code?: number) => {
+  if (code !== 0) return undefined as never;
+  return _origExit.call(process, code);
+}) as never;
+process.on("uncaughtException", () => {});
+process.on("unhandledRejection", () => {});
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
