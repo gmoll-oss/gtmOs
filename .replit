@@ -38,5 +38,5 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "NODE_OPTIONS='--require /tmp/no-exit.cjs' NODE_ENV=development node --import tsx/esm server/index.ts"
+args = "NODE_OPTIONS='--require ./server/no-exit.cjs' NODE_ENV=development node --import tsx/esm server/index.ts"
 waitForPort = 5000
