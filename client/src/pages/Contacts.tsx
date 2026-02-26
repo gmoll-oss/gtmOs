@@ -516,7 +516,7 @@ export default function Contacts() {
                 return (
                   <tr
                     key={lead.id}
-                    className="border-b last:border-b-0 hover-elevate cursor-pointer transition-colors"
+                    className="border-b last:border-b-0 cursor-pointer"
                     onClick={() => navigate(`/contact/${lead.id}`)}
                     data-testid={`row-contact-${lead.id}`}
                   >

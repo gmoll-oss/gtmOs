@@ -22,6 +22,9 @@ import {
   Variable,
   Save,
   ExternalLink,
+  Pencil,
+  X,
+  Loader2,
 } from "lucide-react";
 import { aiPlaybook, type AIPlaybookData } from "@/lib/mockData";
 
@@ -29,6 +32,7 @@ export default function AIPlaybook() {
   const [data, setData] = useState<AIPlaybookData>({ ...aiPlaybook });
   const [isFilling, setIsFilling] = useState(false);
   const [activeTab, setActiveTab] = useState("company");
+  const [isEditing, setIsEditing] = useState(false);
   const [newProduct, setNewProduct] = useState("");
   const [newValueProp, setNewValueProp] = useState("");
   const [newCompetitor, setNewCompetitor] = useState("");
@@ -117,7 +121,11 @@ export default function AIPlaybook() {
               disabled={isFilling}
               data-testid="button-fill-ai"
             >
-              <Sparkles className="w-4 h-4 mr-2" />
+              {isFilling ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
               {isFilling ? "Rellenando..." : "Rellenar con IA"}
             </Button>
             <Button data-testid="button-save-playbook">
@@ -137,6 +145,10 @@ export default function AIPlaybook() {
               <Variable className="w-4 h-4 mr-1.5" />
               Variables IA
             </TabsTrigger>
+            <TabsTrigger value="competitors" data-testid="tab-competitors">
+              <Swords className="w-4 h-4 mr-1.5" />
+              Competidores
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="company" className="space-y-6 mt-4">
@@ -146,6 +158,24 @@ export default function AIPlaybook() {
                   <Building2 className="w-4 h-4 text-muted-foreground" />
                   Información de la empresa
                 </CardTitle>
+                <Button
+                  variant={isEditing ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}
+                  data-testid="button-toggle-edit"
+                >
+                  {isEditing ? (
+                    <>
+                      <X className="w-4 h-4 mr-1.5" />
+                      Cancelar edición
+                    </>
+                  ) : (
+                    <>
+                      <Pencil className="w-4 h-4 mr-1.5" />
+                      Editar
+                    </>
+                  )}
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -156,6 +186,8 @@ export default function AIPlaybook() {
                     <Input
                       value={data.companyName}
                       onChange={(e) => updateField("companyName", e.target.value)}
+                      readOnly={!isEditing}
+                      className={!isEditing ? "bg-muted/50" : ""}
                       data-testid="input-company-name"
                     />
                   </div>
@@ -164,6 +196,8 @@ export default function AIPlaybook() {
                     <Input
                       value={data.industry}
                       onChange={(e) => updateField("industry", e.target.value)}
+                      readOnly={!isEditing}
+                      className={!isEditing ? "bg-muted/50" : ""}
                       data-testid="input-industry"
                     />
                   </div>
@@ -176,6 +210,8 @@ export default function AIPlaybook() {
                       <Input
                         value={data.website}
                         onChange={(e) => updateField("website", e.target.value)}
+                        readOnly={!isEditing}
+                        className={!isEditing ? "bg-muted/50" : ""}
                         data-testid="input-website"
                       />
                       {data.website && (
@@ -196,6 +232,8 @@ export default function AIPlaybook() {
                       <Input
                         value={data.linkedIn}
                         onChange={(e) => updateField("linkedIn", e.target.value)}
+                        readOnly={!isEditing}
+                        className={!isEditing ? "bg-muted/50" : ""}
                         data-testid="input-linkedin"
                       />
                       {data.linkedIn && (
@@ -215,6 +253,8 @@ export default function AIPlaybook() {
                   <Textarea
                     value={data.description}
                     onChange={(e) => updateField("description", e.target.value)}
+                    readOnly={!isEditing}
+                    className={!isEditing ? "bg-muted/50" : ""}
                     rows={4}
                     data-testid="input-description"
                   />
@@ -241,34 +281,38 @@ export default function AIPlaybook() {
                       data-testid={`item-product-${index}`}
                     >
                       <span className="text-sm">{item}</span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => removeProduct(index)}
-                        data-testid={`button-remove-product-${index}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                      </Button>
+                      {isEditing && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeProduct(index)}
+                          data-testid={`button-remove-product-${index}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Añadir producto o servicio..."
-                    value={newProduct}
-                    onChange={(e) => setNewProduct(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addProduct()}
-                    data-testid="input-new-product"
-                  />
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={addProduct}
-                    data-testid="button-add-product"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
+                {isEditing && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Añadir producto o servicio..."
+                      value={newProduct}
+                      onChange={(e) => setNewProduct(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addProduct()}
+                      data-testid="input-new-product"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={addProduct}
+                      data-testid="button-add-product"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -291,34 +335,38 @@ export default function AIPlaybook() {
                       data-testid={`item-value-prop-${index}`}
                     >
                       <span className="text-sm">{item}</span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => removeValueProp(index)}
-                        data-testid={`button-remove-value-prop-${index}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                      </Button>
+                      {isEditing && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeValueProp(index)}
+                          data-testid={`button-remove-value-prop-${index}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Añadir propuesta de valor..."
-                    value={newValueProp}
-                    onChange={(e) => setNewValueProp(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addValueProp()}
-                    data-testid="input-new-value-prop"
-                  />
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={addValueProp}
-                    data-testid="button-add-value-prop"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
+                {isEditing && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Añadir propuesta de valor..."
+                      value={newValueProp}
+                      onChange={(e) => setNewValueProp(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addValueProp()}
+                      data-testid="input-new-value-prop"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={addValueProp}
+                      data-testid="button-add-value-prop"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -333,12 +381,140 @@ export default function AIPlaybook() {
                 <Textarea
                   value={data.icpDefinition}
                   onChange={(e) => updateField("icpDefinition", e.target.value)}
+                  readOnly={!isEditing}
+                  className={!isEditing ? "bg-muted/50" : ""}
                   rows={4}
                   data-testid="input-icp-definition"
                 />
               </CardContent>
             </Card>
+          </TabsContent>
 
+          <TabsContent value="variables" className="space-y-6 mt-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Variable className="w-4 h-4 text-muted-foreground" />
+                    Variables de IA
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Variables personalizadas que la IA usa para enriquecer tus campañas
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {data.aiVariables.length}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md overflow-hidden">
+                  <table className="w-full" data-testid="table-ai-variables">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left text-xs font-medium text-muted-foreground p-3">Variable</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground p-3">Descripción</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground p-3">Fuente</th>
+                        <th className="text-right text-xs font-medium text-muted-foreground p-3 w-12"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.aiVariables.map((variable, index) => (
+                        <tr
+                          key={index}
+                          className="border-b last:border-b-0"
+                          data-testid={`row-variable-${index}`}
+                        >
+                          <td className="p-3">
+                            <Badge variant="outline" className="font-mono text-xs">
+                              {"{"}
+                              {variable.name}
+                              {"}"}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm">{variable.description}</td>
+                          <td className="p-3">
+                            <Badge variant="secondary" className="text-xs">
+                              {variable.source}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-right">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                setData((prev) => ({
+                                  ...prev,
+                                  aiVariables: prev.aiVariables.filter((_, i) => i !== index),
+                                }))
+                              }
+                              data-testid={`button-remove-variable-${index}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <Separator className="my-4" />
+
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Añadir nueva variable
+                  </p>
+                  <AddVariableForm
+                    onAdd={(v) =>
+                      setData((prev) => ({
+                        ...prev,
+                        aiVariables: [...prev.aiVariables, v],
+                      }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-muted-foreground" />
+                  Variables del sistema
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Variables automáticas disponibles en todas las campañas
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { name: "nombre", desc: "Nombre del contacto" },
+                    { name: "empresa", desc: "Nombre de la empresa" },
+                    { name: "ciudad", desc: "Ciudad del contacto" },
+                    { name: "titulo", desc: "Cargo del contacto" },
+                    { name: "industria", desc: "Industria de la empresa" },
+                    { name: "empleados", desc: "Cantidad de empleados" },
+                  ].map((sysVar) => (
+                    <div
+                      key={sysVar.name}
+                      className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50"
+                      data-testid={`system-var-${sysVar.name}`}
+                    >
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {"{"}
+                        {sysVar.name}
+                        {"}"}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">{sysVar.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="competitors" className="space-y-6 mt-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -433,117 +609,6 @@ export default function AIPlaybook() {
                     </div>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="variables" className="space-y-6 mt-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-                <div>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Variable className="w-4 h-4 text-muted-foreground" />
-                    Variables de IA
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Variables personalizadas que la IA usa para enriquecer tus campañas
-                  </p>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {data.aiVariables.length}
-                </Badge>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {data.aiVariables.map((variable, index) => (
-                  <div
-                    key={index}
-                    className="p-4 rounded-md bg-muted/50 space-y-2"
-                    data-testid={`card-variable-${index}`}
-                  >
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {"{"}
-                          {variable.name}
-                          {"}"}
-                        </Badge>
-                        <span className="text-sm">{variable.description}</span>
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() =>
-                          setData((prev) => ({
-                            ...prev,
-                            aiVariables: prev.aiVariables.filter((_, i) => i !== index),
-                          }))
-                        }
-                        data-testid={`button-remove-variable-${index}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-muted-foreground">Fuente:</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {variable.source}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-
-                <Separator />
-
-                <div className="space-y-3 pt-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Añadir nueva variable
-                  </p>
-                  <AddVariableForm
-                    onAdd={(v) =>
-                      setData((prev) => ({
-                        ...prev,
-                        aiVariables: [...prev.aiVariables, v],
-                      }))
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Bot className="w-4 h-4 text-muted-foreground" />
-                  Variables del sistema
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Variables automáticas disponibles en todas las campañas
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { name: "nombre", desc: "Nombre del contacto" },
-                    { name: "empresa", desc: "Nombre de la empresa" },
-                    { name: "ciudad", desc: "Ciudad del contacto" },
-                    { name: "titulo", desc: "Cargo del contacto" },
-                    { name: "industria", desc: "Industria de la empresa" },
-                    { name: "empleados", desc: "Cantidad de empleados" },
-                  ].map((sysVar) => (
-                    <div
-                      key={sysVar.name}
-                      className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50"
-                      data-testid={`system-var-${sysVar.name}`}
-                    >
-                      <Badge variant="outline" className="font-mono text-xs">
-                        {"{"}
-                        {sysVar.name}
-                        {"}"}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">{sysVar.desc}</span>
-                    </div>
-                  ))}
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

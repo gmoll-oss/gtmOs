@@ -24,7 +24,7 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronRight,
-  ExternalLink,
+
   CheckCircle,
   AlertTriangle,
   Timer,
@@ -670,9 +670,9 @@ function SearchTab() {
   const [showFilters, setShowFilters] = useState(false);
 
   const [filterCountry, setFilterCountry] = useState<string>("all");
-  const [filterSeniority, setFilterSeniority] = useState<string>("all");
+  const [filterIndustry, setFilterIndustry] = useState<string>("all");
   const [filterSize, setFilterSize] = useState<string>("all");
-  const [filterEmailStatus, setFilterEmailStatus] = useState<string>("all");
+  const [filterTitle, setFilterTitle] = useState<string>("all");
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [listName, setListName] = useState("");
@@ -685,9 +685,9 @@ function SearchTab() {
     try {
       const filters: Record<string, string[]> = {};
       if (filterCountry !== "all") filters.organization_locations = [filterCountry];
-      if (filterSeniority !== "all") filters.person_seniorities = [filterSeniority];
+      if (filterIndustry !== "all") filters.organization_industries = [filterIndustry];
       if (filterSize !== "all") filters.organization_num_employees_ranges = [filterSize];
-      if (filterEmailStatus !== "all") filters.contact_email_status = [filterEmailStatus];
+      if (filterTitle !== "all") filters.person_titles = [filterTitle];
 
       const response = await fetch("/api/apollo/search", {
         method: "POST",
@@ -725,7 +725,7 @@ function SearchTab() {
     } finally {
       setIsSearching(false);
     }
-  }, [filterCountry, filterSeniority, filterSize, filterEmailStatus, toast]);
+  }, [filterCountry, filterIndustry, filterSize, filterTitle, toast]);
 
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
@@ -760,13 +760,13 @@ function SearchTab() {
 
   const clearFilters = () => {
     setFilterCountry("all");
-    setFilterSeniority("all");
+    setFilterIndustry("all");
     setFilterSize("all");
-    setFilterEmailStatus("all");
+    setFilterTitle("all");
   };
 
   const hasActiveFilters =
-    filterCountry !== "all" || filterSeniority !== "all" || filterSize !== "all" || filterEmailStatus !== "all";
+    filterCountry !== "all" || filterIndustry !== "all" || filterSize !== "all" || filterTitle !== "all";
 
   const selectedContacts = results.filter((p) => selectedPeople.has(p.id));
 
@@ -824,13 +824,13 @@ function SearchTab() {
 
   const filteredResults = results.filter((p) => {
     if (filterCountry !== "all" && p.organization?.country !== filterCountry && p.country !== filterCountry) return false;
-    if (filterSeniority !== "all" && p.seniority !== filterSeniority) return false;
+    if (filterIndustry !== "all" && p.organization?.industry !== filterIndustry) return false;
     if (filterSize !== "all") {
       const emp = p.organization?.estimated_num_employees || 0;
       const [min, max] = filterSize.split(",").map(Number);
       if (emp < min || emp > max) return false;
     }
-    if (filterEmailStatus !== "all" && p.email_status !== filterEmailStatus) return false;
+    if (filterTitle !== "all" && !p.title?.toLowerCase().includes(filterTitle.toLowerCase())) return false;
     return true;
   });
 
@@ -839,20 +839,21 @@ function SearchTab() {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 pb-0">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                <Input
-                  data-testid="input-icp-search"
-                  placeholder='Describe tu ICP... ej: "CMO hoteles España"'
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="pl-10"
-                />
-              </div>
+        <div className="rounded-md p-[2px] bg-gradient-to-r from-primary via-violet-500 to-primary">
+          <Card className="border-0">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                  <Input
+                    data-testid="input-icp-search"
+                    placeholder='Describe tu ICP... ej: "CMO hoteles España"'
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="pl-10"
+                  />
+                </div>
               <Button data-testid="button-search" onClick={handleSearch} disabled={isSearching || !searchQuery.trim()}>
                 {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 <span className="ml-2">Buscar</span>
@@ -862,7 +863,7 @@ function SearchTab() {
                 <span className="ml-2">Filtros</span>
                 {hasActiveFilters && (
                   <Badge variant="default" className="ml-2 text-xs">
-                    {[filterCountry, filterSeniority, filterSize, filterEmailStatus].filter((f) => f !== "all").length}
+                    {[filterCountry, filterIndustry, filterSize, filterTitle].filter((f) => f !== "all").length}
                   </Badge>
                 )}
               </Button>
@@ -905,8 +906,9 @@ function SearchTab() {
                 </Badge>
               </div>
             )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden p-4 gap-4">
@@ -934,17 +936,14 @@ function SearchTab() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Seniority</label>
-              <Select value={filterSeniority} onValueChange={setFilterSeniority}>
-                <SelectTrigger data-testid="select-filter-seniority"><SelectValue placeholder="Todos" /></SelectTrigger>
+              <label className="text-xs font-medium text-muted-foreground">Industria</label>
+              <Select value={filterIndustry} onValueChange={setFilterIndustry}>
+                <SelectTrigger data-testid="select-filter-industry"><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="c_suite">C-Suite</SelectItem>
-                  <SelectItem value="vp">VP</SelectItem>
-                  <SelectItem value="director">Director</SelectItem>
-                  <SelectItem value="head">Head</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="senior">Senior</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {Array.from(new Set(results.map((p) => p.organization?.industry).filter(Boolean))).map((ind) => (
+                    <SelectItem key={ind} value={ind!}>{ind}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -964,14 +963,17 @@ function SearchTab() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Estado email</label>
-              <Select value={filterEmailStatus} onValueChange={setFilterEmailStatus}>
-                <SelectTrigger data-testid="select-filter-email"><SelectValue placeholder="Todos" /></SelectTrigger>
+              <label className="text-xs font-medium text-muted-foreground">Cargo</label>
+              <Select value={filterTitle} onValueChange={setFilterTitle}>
+                <SelectTrigger data-testid="select-filter-title"><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="verified">Verificado</SelectItem>
-                  <SelectItem value="unverified">Sin verificar</SelectItem>
-                  <SelectItem value="likely to engage">Probable</SelectItem>
+                  <SelectItem value="director">Director</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="ceo">CEO</SelectItem>
+                  <SelectItem value="cmo">CMO</SelectItem>
+                  <SelectItem value="revenue">Revenue Manager</SelectItem>
+                  <SelectItem value="ventas">Ventas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1055,7 +1057,8 @@ function SearchTab() {
                         <th className="text-left p-3 font-medium text-muted-foreground">Empresa</th>
                         <th className="text-left p-3 font-medium text-muted-foreground">Email</th>
                         <th className="text-left p-3 font-medium text-muted-foreground">Teléfono</th>
-                        <th className="text-left p-3 font-medium text-muted-foreground">LinkedIn</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">Score</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1126,20 +1129,34 @@ function SearchTab() {
                             )}
                           </td>
                           <td className="p-3">
-                            {person.linkedin_url ? (
-                              <a
-                                href={person.linkedin_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                                data-testid={`link-linkedin-${person.id}`}
+                            <div className="flex items-center gap-1.5" data-testid={`score-${person.id}`}>
+                              <Progress value={Math.min(100, Math.max(0, (person.organization?.estimated_num_employees || 50) / 3))} className="h-1.5 w-16" />
+                              <span className="text-xs font-medium text-muted-foreground">{Math.min(100, Math.max(10, Math.round((person.organization?.estimated_num_employees || 50) / 3)))}</span>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs"
+                                data-testid={`button-enrich-${person.id}`}
+                                onClick={(e) => { e.stopPropagation(); toast({ title: "Enriqueciendo", description: `${person.name} añadido a cola` }); }}
                               >
-                                <Linkedin className="w-3.5 h-3.5" />
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
+                                <Zap className="w-3.5 h-3.5 mr-1" />
+                                Enriquecer
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs"
+                                data-testid={`button-add-to-list-${person.id}`}
+                                onClick={(e) => { e.stopPropagation(); togglePerson(person.id); setSaveDialogOpen(true); setListName("Nueva lista"); }}
+                              >
+                                <ListPlus className="w-3.5 h-3.5 mr-1" />
+                                A Lista
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}

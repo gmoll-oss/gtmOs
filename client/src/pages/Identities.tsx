@@ -15,14 +15,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   UserCircle,
   Plus,
   Mail,
@@ -33,18 +25,28 @@ import {
   Trash2,
   CheckCircle,
   Pause,
+  Shield,
 } from "lucide-react";
 
-const STATUS_CONFIG: Record<Identity["status"], { label: string; variant: "default" | "secondary" | "outline" }> = {
-  active: { label: "Activo", variant: "default" },
-  paused: { label: "Pausado", variant: "secondary" },
-  warming_up: { label: "Calentando", variant: "outline" },
+const STATUS_CONFIG: Record<
+  Identity["status"],
+  { label: string; variant: "default" | "secondary" | "outline"; iconColor: string }
+> = {
+  active: { label: "Activo", variant: "default", iconColor: "text-green-600 dark:text-green-400" },
+  paused: { label: "Pausado", variant: "secondary", iconColor: "text-amber-600 dark:text-amber-400" },
+  warming_up: { label: "Calentando", variant: "outline", iconColor: "text-blue-600 dark:text-blue-400" },
 };
 
 const WARMUP_COLOR = (progress: number) => {
   if (progress >= 80) return "text-green-600 dark:text-green-400";
   if (progress >= 50) return "text-amber-600 dark:text-amber-400";
   return "text-orange-600 dark:text-orange-400";
+};
+
+const USAGE_COLOR = (ratio: number) => {
+  if (ratio >= 0.9) return "text-red-600 dark:text-red-400";
+  if (ratio >= 0.7) return "text-amber-600 dark:text-amber-400";
+  return "text-muted-foreground";
 };
 
 interface IdentityFormData {
@@ -98,9 +100,7 @@ export default function Identities() {
     if (editingId) {
       setIdentityList((prev) =>
         prev.map((i) =>
-          i.id === editingId
-            ? { ...i, ...formData }
-            : i
+          i.id === editingId ? { ...i, ...formData } : i
         )
       );
     } else {
@@ -172,7 +172,7 @@ export default function Identities() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Warmup Progreso</CardTitle>
+              <CardTitle className="text-sm font-medium">Warmup Promedio</CardTitle>
               <Flame className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -190,120 +190,116 @@ export default function Identities() {
           </Card>
         </div>
 
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Identidad</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>SMTP</TableHead>
-                  <TableHead className="text-center">Límite Diario</TableHead>
-                  <TableHead className="text-center">Enviados Hoy</TableHead>
-                  <TableHead>Warmup</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {identityList.map((identity) => (
-                  <TableRow key={identity.id} data-testid={`row-identity-${identity.id}`}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <UserCircle className="w-5 h-5 text-muted-foreground" />
-                        <span className="font-medium" data-testid={`text-identity-name-${identity.id}`}>
-                          {identity.name}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm" data-testid={`text-identity-email-${identity.id}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {identityList.map((identity) => {
+            const usageRatio = identity.sentToday / identity.dailyLimit;
+            const usagePercent = Math.min(usageRatio * 100, 100);
+
+            return (
+              <Card key={identity.id} data-testid={`card-identity-${identity.id}`}>
+                <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-md bg-muted shrink-0">
+                      <UserCircle className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <CardTitle className="text-base font-semibold truncate" data-testid={`text-identity-name-${identity.id}`}>
+                        {identity.name}
+                      </CardTitle>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <span className="text-sm text-muted-foreground truncate" data-testid={`text-identity-email-${identity.id}`}>
                           {identity.email}
                         </span>
                       </div>
-                    </TableCell>
-                    <TableCell>
+                    </div>
+                  </div>
+                  <Badge
+                    variant={STATUS_CONFIG[identity.status].variant}
+                    className="shrink-0"
+                    data-testid={`badge-identity-status-${identity.id}`}
+                  >
+                    {identity.status === "active" && <CheckCircle className="w-3 h-3 mr-1" />}
+                    {identity.status === "paused" && <Pause className="w-3 h-3 mr-1" />}
+                    {identity.status === "warming_up" && <Flame className="w-3 h-3 mr-1" />}
+                    {STATUS_CONFIG[identity.status].label}
+                  </Badge>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Server className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">
+                      {identity.smtpHost}:{identity.smtpPort}
+                    </span>
+                    <Shield className={`w-3.5 h-3.5 shrink-0 ml-auto ${STATUS_CONFIG[identity.status].iconColor}`} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 text-sm">
                       <div className="flex items-center gap-1.5">
-                        <Server className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          {identity.smtpHost}:{identity.smtpPort}
-                        </span>
+                        <Send className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="font-medium">Enviados hoy</span>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-sm font-medium">{identity.dailyLimit}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-sm font-medium">
-                          {identity.sentToday}
-                        </span>
-                        <Progress
-                          value={(identity.sentToday / identity.dailyLimit) * 100}
-                          className="w-16 h-1.5"
-                        />
+                      <span className={`font-medium ${USAGE_COLOR(usageRatio)}`}>
+                        {identity.sentToday} / {identity.dailyLimit}
+                      </span>
+                    </div>
+                    <Progress
+                      value={usagePercent}
+                      className="h-2"
+                      data-testid={`progress-daily-usage-${identity.id}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Flame className={`w-3.5 h-3.5 ${WARMUP_COLOR(identity.warmupProgress)}`} />
+                        <span className="font-medium">Warmup</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1 min-w-[100px]">
-                        <div className="flex items-center justify-between gap-2">
-                          <Flame className={`w-4 h-4 ${WARMUP_COLOR(identity.warmupProgress)}`} />
-                          <span className={`text-sm font-medium ${WARMUP_COLOR(identity.warmupProgress)}`}>
-                            {identity.warmupProgress}%
-                          </span>
-                        </div>
-                        <Progress
-                          value={identity.warmupProgress}
-                          className="h-1.5"
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={STATUS_CONFIG[identity.status].variant}
-                        data-testid={`badge-identity-status-${identity.id}`}
-                      >
-                        {identity.status === "active" && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {identity.status === "paused" && <Pause className="w-3 h-3 mr-1" />}
-                        {identity.status === "warming_up" && <Flame className="w-3 h-3 mr-1" />}
-                        {STATUS_CONFIG[identity.status].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => openEdit(identity)}
-                          data-testid={`button-edit-identity-${identity.id}`}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleDelete(identity.id)}
-                          data-testid={`button-delete-identity-${identity.id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {identityList.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                      No hay identidades configuradas. Añade una para empezar a enviar.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      <span className={`font-medium ${WARMUP_COLOR(identity.warmupProgress)}`}>
+                        {identity.warmupProgress}%
+                      </span>
+                    </div>
+                    <Progress
+                      value={identity.warmupProgress}
+                      className="h-2"
+                      data-testid={`progress-warmup-${identity.id}`}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1 pt-1 border-t">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => openEdit(identity)}
+                      data-testid={`button-edit-identity-${identity.id}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDelete(identity.id)}
+                      data-testid={`button-delete-identity-${identity.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {identityList.length === 0 && (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <UserCircle className="w-10 h-10 mb-3" />
+              <p className="text-sm">No hay identidades configuradas. Añade una para empezar a enviar.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

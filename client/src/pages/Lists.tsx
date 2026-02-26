@@ -48,11 +48,11 @@ import { leads, type ProspectList } from "@/lib/mockData";
 import { useLists, isDynamicList, type DynamicList, type ApolloContact } from "@/lib/listsStore";
 import { useToast } from "@/hooks/use-toast";
 
-const SOURCE_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-  search: { label: "Búsqueda", variant: "secondary" },
-  import: { label: "Importado", variant: "outline" },
-  ai: { label: "IA", variant: "default" },
-  manual: { label: "Manual", variant: "outline" },
+const SOURCE_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "outline"; className: string }> = {
+  search: { label: "Búsqueda", variant: "secondary", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+  import: { label: "Importado", variant: "secondary", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+  ai: { label: "IA", variant: "secondary", className: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
+  manual: { label: "Manual", variant: "secondary", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },
 };
 
 function formatDate(dateStr: string) {
@@ -92,7 +92,7 @@ function ListCard({
           </CardTitle>
         </div>
         <div className="flex items-center gap-1.5">
-          <Badge variant={sourceConfig.variant} data-testid={`badge-source-${list.id}`}>
+          <Badge variant={sourceConfig.variant} className={sourceConfig.className} data-testid={`badge-source-${list.id}`}>
             {sourceConfig.label}
           </Badge>
           {isDynamic && onDelete && (
@@ -183,7 +183,7 @@ function DynamicListDetailView({
           <h2 className="text-lg font-semibold truncate" data-testid="text-list-name">
             {list.name}
           </h2>
-          <Badge variant={sourceConfig.variant}>
+          <Badge variant={sourceConfig.variant} className={sourceConfig.className}>
             {sourceConfig.label}
           </Badge>
         </div>
@@ -464,7 +464,7 @@ function MockListDetailView({
           <h2 className="text-lg font-semibold truncate" data-testid="text-list-name">
             {list.name}
           </h2>
-          <Badge variant={sourceConfig.variant}>
+          <Badge variant={sourceConfig.variant} className={sourceConfig.className}>
             {sourceConfig.label}
           </Badge>
         </div>

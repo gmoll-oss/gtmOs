@@ -17,6 +17,7 @@ const AI_TAG_FILTERS: { value: AiTagFilter; label: string }[] = [
   { value: "not_interested", label: "No interesado" },
   { value: "auto_reply", label: "Auto-respuesta" },
   { value: "question", label: "Pregunta" },
+  { value: "out_of_office", label: "Fuera de oficina" },
 ];
 
 function getInitials(name: string): string {
@@ -136,7 +137,7 @@ function MessageBubble({ message }: { message: InboxMessage }) {
       <div
         className={`max-w-[75%] rounded-md p-3 ${
           isOutbound
-            ? "bg-primary/10 dark:bg-primary/20"
+            ? "bg-teal-50 dark:bg-teal-900/30"
             : "bg-muted"
         }`}
       >

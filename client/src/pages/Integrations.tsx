@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Plug, RefreshCw, CheckCircle2, XCircle, Clock, ArrowRightLeft, AlertTriangle, ExternalLink, ChevronRight } from "lucide-react";
+import { Plug, RefreshCw, CheckCircle2, XCircle, Clock, ArrowRightLeft, AlertTriangle, ExternalLink, ChevronRight, Building2 } from "lucide-react";
 import { SiZoho } from "react-icons/si";
 
 interface SyncLogEntry {
@@ -218,7 +218,7 @@ export default function Integrations() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card data-testid="card-zapier-integration">
             <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
               <div className="flex items-start gap-3">
@@ -262,6 +262,29 @@ export default function Integrations() {
                 Configura webhooks personalizados para recibir notificaciones en tiempo real sobre eventos del sistema: nuevos leads, cambios de estado, respuestas de email.
               </p>
               <Button variant="outline" size="sm" disabled data-testid="button-webhooks-configure">Configurar</Button>
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-pms-integration">
+            <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-md bg-sky-100 dark:bg-sky-900/30">
+                  <Building2 className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">PMS</CardTitle>
+                  <CardDescription>Conecta tu sistema de gestión hotelera</CardDescription>
+                </div>
+              </div>
+              <Badge variant="outline" data-testid="badge-pms-status">
+                <Clock className="w-3 h-3 mr-1" />Próximamente
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">
+                Integra tu Property Management System para sincronizar datos de reservas, huéspedes y disponibilidad directamente con Fideltour.
+              </p>
+              <Button variant="outline" size="sm" disabled data-testid="button-pms-configure">Configurar</Button>
             </CardContent>
           </Card>
         </div>
