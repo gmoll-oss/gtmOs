@@ -4,23 +4,33 @@
 A white-label B2B SaaS platform replicating the Enginy.ai (formerly Genesy) product structure for Fideltour's hospitality CRM business. 12 modules matching Enginy's complete workflow: Activity → Inbox → Find & Enrich → Lists → Contacts → Companies → Campaigns → Analytics → Identities → AI Playbook → Integrations → Configuration. Adapted for hotel prospecting with Zoho CRM integration.
 
 ## Tech Stack
-- React + TypeScript (frontend)
-- Tailwind CSS (styling with light/dark theme support)
-- wouter (routing)
-- Recharts (charts and analytics)
-- Lucide React (icons)
-- Shadcn UI components
-- Mock data (no backend/database - all data hardcoded)
-- Express server (serves frontend only)
+- **Next.js 14** (App Router) - framework
+- **React 18 + TypeScript** - frontend
+- **Tailwind CSS** (styling with light/dark theme support)
+- **Recharts** (charts and analytics)
+- **Lucide React** (icons)
+- **Shadcn UI** components
+- Mock data (currently hardcoded in lib/mockData.ts; migration to Prisma + PostgreSQL planned)
+
+## Migration Status (Express → Next.js)
+- T001 ✅ Next.js 14 foundation set up (app router, configs, workflow)
+- T002 ✅ Sidebar + theme + layout migrated
+- T003 ✅ All 12 module pages migrated (using mock data)
+- T004 🔲 Prisma + PostgreSQL setup
+- T005 🔲 tRPC setup
+- T006 🔲 Connect pages to tRPC + Prisma
+- T007 🔲 Better Auth setup
+- T008 🔲 Final cleanup, testing, deployment
 
 ## Application Structure
-12 modules accessible via left sidebar (matching Enginy's navigation):
-1. **Actividad** (`/`) - System-wide activity feed with timeline layout, type filters, search
+Next.js App Router pages in `app/(dashboard)/`:
+
+1. **Actividad** (`/`) - `app/(dashboard)/page.tsx` - Dashboard with KPI cards, pipeline bar, campaign/inbox summaries, activity feed
 2. **Inbox** (`/inbox`) - Two-panel email inbox with AI-tagged conversations and message threads
 3. **Buscar y Enriquecer** (`/find`) - AI Finder search bar + filter sidebar + results table with enrichment status
 4. **Listas** (`/lists`) - Card grid of prospect lists, click to expand contacts table, bulk actions
 5. **Contactos** (`/contacts`) - Full contact data table with advanced filters, bulk actions, pagination
-6. **Contact Detail** (`/contact/:id`) - Contact profile with enrichment waterfall, scoring, exclusion checks, campaign enrollment, Zoho sync
+6. **Contact Detail** (`/contact/[id]`) - Contact profile with enrichment waterfall, scoring, exclusion checks, campaign enrollment, Zoho sync
 7. **Empresas** (`/companies`) - Company data table with click-to-expand detail panel, firmographic data, contacts list
 8. **Campañas** (`/campaigns`) - Campaign cards with visual flow builder (email/wait/condition/breakup steps with branches)
 9. **Analíticas** (`/analytics`) - KPI cards, Recharts bar/line charts, pipeline funnel, campaign performance table
@@ -33,11 +43,25 @@ A white-label B2B SaaS platform replicating the Enginy.ai (formerly Genesy) prod
 Discovered → Qualified → Enriched → Eligible → In Sequence → Engaged → Ready to Sync → Synced → Excluded → Archived
 
 ## Key Files
-- `client/src/lib/mockData.ts` - All mock data: 15 leads, 12 companies, 4 lists, 3 campaigns, 3 identities, 7 inbox threads, 15 activity items, AI playbook data, enrichment attempts, event logs, suppression list, exclusion rules, enrichment queue
-- `client/src/components/AppSidebar.tsx` - Fixed left sidebar with Enginy-style navigation (main nav + settings section), theme toggle
-- `client/src/hooks/useTheme.ts` - Light/dark mode toggle hook (persisted in localStorage)
-- `client/src/pages/` - All 14 page components (12 modules + ContactDetail + NotFound)
-- `client/src/App.tsx` - Router and layout
+- `app/layout.tsx` - Root layout with ThemeProvider, fonts, metadata
+- `app/(dashboard)/layout.tsx` - Dashboard layout with AppSidebar
+- `app/(dashboard)/page.tsx` - Activity dashboard (home page)
+- `app/(dashboard)/*/page.tsx` - All module pages
+- `components/AppSidebar.tsx` - Fixed left sidebar with navigation, theme toggle
+- `components/ThemeProvider.tsx` - Light/dark theme context (persisted in localStorage)
+- `components/ui/` - Shadcn UI components
+- `lib/mockData.ts` - All mock data (15 leads, 12 companies, 4 lists, 3 campaigns, etc.)
+- `lib/listsStore.ts` - Lists state management (zustand)
+- `lib/utils.ts` - Utility functions (cn helper)
+- `app/globals.css` - Tailwind CSS with theme variables
+- `next.config.js` - Next.js configuration
+- `tailwind.config.ts` - Tailwind configuration with custom theme
+- `postcss.config.cjs` - PostCSS configuration (CommonJS format due to package.json "type": "module")
+
+## Legacy Files (to be removed in T008)
+- `client/` - Old React + Vite frontend
+- `server/` - Old Express backend
+- `shared/` - Old shared types
 
 ## Data Model (Mock)
 - **Lead**: email, name, title, company, domain, status (pipeline), score, ICP/completeness/signal scores, exclusion info, enrichment confidence, sequence enrollment, Zoho sync status
@@ -70,7 +94,7 @@ Discovered → Qualified → Enriched → Eligible → In Sequence → Engaged �
 - Logo: /logo-fideltour.png (white logo inverted for dark sidebar)
 - Favicon: /favicon.png (Fideltour favicon)
 - Desktop only (min-width 1280px)
-- No authentication
+- No authentication (yet - Better Auth planned for T007)
 - data-testid attributes on all interactive elements
 
 ## Exclusion Engine (Negativization)
@@ -84,10 +108,14 @@ Discovered → Qualified → Enriched → Eligible → In Sequence → Engaged �
 7. Recent sales activity (configurable days threshold)
 8. Strategic/managed manually flag
 
+## Running the Project
+- Workflow: `npx next dev -p 5000`
+- All pages are client components ("use client") using mock data
+- No database required currently
+
 ## User Preferences
 - Spanish language for all UI labels and content
 - Production-ready visual appearance
-- All data is mock/hardcoded - no API calls needed
 - Light and dark mode support
 - Reference: enginy.ai for complete product structure and UX patterns
 - Do NOT add credits/usage display to the sidebar - user has explicitly requested this not be added
