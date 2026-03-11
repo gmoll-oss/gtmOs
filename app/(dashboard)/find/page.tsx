@@ -455,7 +455,7 @@ function EnrichmentDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            {item.providers.map((p) => {
+                            {(item.providers || []).map((p) => {
                               const prov = ENRICHMENT_PROVIDERS.find((pr) => pr.name === p);
                               return (
                                 <span
@@ -472,7 +472,7 @@ function EnrichmentDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <span className="text-xs font-medium">{item.fieldsFound.length}/{item.fieldsRequested.length}</span>
+                            <span className="text-xs font-medium">{(item.fieldsFound || []).length}/{(item.fieldsRequested || []).length}</span>
                             <span className="text-[10px] text-muted-foreground">campos</span>
                           </div>
                         </TableCell>
@@ -499,12 +499,12 @@ function EnrichmentDashboard() {
                             <div className="grid grid-cols-3 gap-4">
                               <div>
                                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Campos solicitados</p>
-                                <FieldBadges requested={item.fieldsRequested} found={item.fieldsFound} />
+                                <FieldBadges requested={item.fieldsRequested || []} found={item.fieldsFound || []} />
                               </div>
                               <div>
                                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Proveedores waterfall</p>
                                 <div className="space-y-1">
-                                  {item.providers.map((p, i) => {
+                                  {(item.providers || []).map((p, i) => {
                                     const prov = ENRICHMENT_PROVIDERS.find((pr) => pr.name === p);
                                     return (
                                       <div key={p} className="flex items-center gap-2">
@@ -514,7 +514,7 @@ function EnrichmentDashboard() {
                                         {item.status === "completed" && (
                                           <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                                         )}
-                                        {item.status === "failed" && i === item.providers.length - 1 && (
+                                        {item.status === "failed" && i === (item.providers || []).length - 1 && (
                                           <XCircle className="w-3 h-3 text-red-500" />
                                         )}
                                       </div>
@@ -626,8 +626,8 @@ function EnrichmentDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {attempt.fieldsFound.length > 0 ? (
-                            attempt.fieldsFound.map((f) => (
+                          {(attempt.fieldsFound || []).length > 0 ? (
+                            (attempt.fieldsFound || []).map((f) => (
                               <span key={f} className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
                                 {ENRICHMENT_FIELD_LABELS[f] || f}
                               </span>

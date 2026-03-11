@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   Inbox,
@@ -17,8 +17,10 @@ import {
   Settings,
   Sun,
   Moon,
+  LogOut,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import { useSession, signOut } from "@/lib/auth-client";
 
 const mainNavItems = [
   { path: "/", label: "Actividad", icon: Activity },
@@ -40,7 +42,9 @@ const settingsNavItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const { data: session } = useSession();
 
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";
@@ -81,7 +85,7 @@ export function AppSidebar() {
         {settingsNavItems.map(renderNavItem)}
       </nav>
 
-      <div className="px-3 pb-2">
+      <div className="px-3 pb-2 space-y-0.5">
         <button
           onClick={toggleTheme}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
@@ -90,6 +94,30 @@ export function AppSidebar() {
           {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           <span className="text-[12px] font-medium">{theme === "dark" ? "Modo Claro" : "Modo Oscuro"}</span>
         </button>
+        {session?.user && (
+          <>
+            <div className="border-t border-sidebar-border my-1" />
+            <div className="flex items-center gap-2 px-3 py-1.5">
+              <div className="w-6 h-6 rounded-full bg-sidebar-primary/30 flex items-center justify-center text-[10px] font-bold text-sidebar-primary">
+                {session.user.name?.charAt(0)?.toUpperCase() || "U"}
+              </div>
+              <span className="text-[11px] text-sidebar-foreground/70 truncate flex-1" data-testid="text-user-name">
+                {session.user.name || session.user.email}
+              </span>
+            </div>
+            <button
+              onClick={async () => {
+                await signOut();
+                router.push("/login");
+              }}
+              className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:text-red-400 hover:bg-sidebar-accent transition-colors cursor-pointer"
+              data-testid="button-sign-out"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-[12px] font-medium">Cerrar Sesión</span>
+            </button>
+          </>
+        )}
       </div>
     </aside>
   );
