@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, Fragment } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useLists } from "@/lib/listsStore";
 import {
@@ -429,9 +429,8 @@ function EnrichmentDashboard() {
                   </TableRow>
                 ) : (
                   filteredQueue.map((item) => (
-                    <>
+                    <Fragment key={item.id}>
                       <TableRow
-                        key={item.id}
                         className={`cursor-pointer hover:bg-muted/30 ${expandedId === item.id ? "bg-muted/20" : ""} ${item.status === "processing" ? "bg-blue-50/50 dark:bg-blue-950/20" : ""}`}
                         onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
                         data-testid={`queue-row-${item.id}`}
@@ -545,7 +544,7 @@ function EnrichmentDashboard() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   ))
                 )}
               </TableBody>
