@@ -1,0 +1,136 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "General Sans",
+      "role": "body"
+    },
+    {
+      "family": "Nunito",
+      "role": "unknown"
+    },
+    {
+      "family": "Poppins",
+      "role": "unknown"
+    }
+  ],
+  "colors": {
+    "primary": "#00395E",
+    "accent": "#25CAD2",
+    "background": "#FFFFFF",
+    "textPrimary": "#25CAD2",
+    "link": "#25CAD2"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "General Sans",
+      "heading": "General Sans"
+    },
+    "fontStacks": {
+      "heading": [
+        "Nunito",
+        "sans-serif"
+      ],
+      "body": [
+        "General Sans",
+        "sans-serif"
+      ],
+      "paragraph": [
+        "General Sans",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "60px",
+      "h2": "60px",
+      "body": "16px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "6px"
+  },
+  "components": {
+    "buttonPrimary": {
+      "background": "#25CAD2",
+      "textColor": "#FFFFFF",
+      "borderColor": "#25CAD2",
+      "borderRadius": "50px",
+      "borderRadiusCorners": {
+        "topLeft": "50px",
+        "topRight": "50px",
+        "bottomRight": "50px",
+        "bottomLeft": "50px"
+      },
+      "shadow": "none"
+    },
+    "buttonSecondary": {
+      "background": "#00395E",
+      "textColor": "#F3F7FA",
+      "borderColor": "#467FF7",
+      "borderRadius": "100px",
+      "borderRadiusCorners": {
+        "topLeft": "100px",
+        "topRight": "100px",
+        "bottomRight": "100px",
+        "bottomLeft": "100px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "logo": "https://www.fideltour.com/wp-content/uploads/2023/04/Logo-Principal@4x.png",
+    "favicon": "https://www.fideltour.com/wp-content/uploads/2026/01/favicon-150x150.png",
+    "ogImage": "https://www.fideltour.com/wp-content/uploads/2025/12/Fideltour-Home-Graphic-CRM-Hoteles-img01-1200-2.png",
+    "logoHref": "https://www.fideltour.com"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand name 'Fideltour'.",
+    "confidence": 0.95,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 0,
+      "text": "Solicita una DEMO gratis",
+      "reasoning": "Button #0 'Solicita una DEMO gratis' is the primary CTA due to its vibrant brand color (#25CAD2) and action-oriented text, making it the most prominent call-to-action."
+    },
+    "secondary": {
+      "index": 11,
+      "text": "Iniciar sesión",
+      "reasoning": "Button #7 'Iniciar sesión' is chosen as secondary because it has a different background color (#00395E) and serves a supportive action role."
+    },
+    "confidence": 0.95
+  },
+  "personality": {
+    "tone": "professional",
+    "energy": "medium",
+    "targetAudience": "hotel industry professionals"
+  },
+  "designSystem": {
+    "framework": "custom",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.95,
+    "colors": 0.9,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand name 'Fideltour'.",
+        "confidence": 0.95
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}

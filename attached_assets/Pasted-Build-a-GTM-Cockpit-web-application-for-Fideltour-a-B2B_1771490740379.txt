@@ -1,0 +1,277 @@
+Build a GTM Cockpit web application for Fideltour, a B2B SaaS company 
+specializing in CRM and loyalty solutions for the hospitality industry. 
+This is Platform 1 (MQL/GTM) - focused on lead generation, enrichment, 
+and nurturing until leads become SQLs (Contact Value ≥ 50).
+
+## TECH STACK
+- React + TypeScript (frontend)
+- Tailwind CSS (styling)
+- React Router (navigation)
+- Recharts (charts and analytics)
+- Lucide React (icons)
+- Mock data (no backend yet - all data hardcoded as realistic examples)
+
+## DESIGN SYSTEM
+- Dark theme: background #0F1117, cards #1A1D27, borders #2A2D3E
+- Primary accent: #6366F1 (indigo)
+- Success: #10B981 (green)
+- Warning: #F59E0B (amber)  
+- Danger: #EF4444 (red)
+- Text primary: #F9FAFB, Text secondary: #9CA3AF
+- Font: Inter
+- Rounded corners: rounded-xl for cards, rounded-lg for buttons
+- Sidebar navigation (left), main content (right)
+
+## APPLICATION STRUCTURE
+6 main screens accessible via left sidebar:
+
+1. Dashboard (home icon) - "GTM Dashboard"
+2. Database (database icon) - "Hotel Database"  
+3. Lead Detail (user icon) - "Lead Profile" (accessible by clicking a hotel)
+4. Sequences (git-branch icon) - "Cadences"
+5. Unibox (inbox icon) - "Unified Inbox"
+6. Analytics (bar-chart icon) - "Analytics"
+
+## SCREEN 1: GTM DASHBOARD
+
+Header: "GTM Cockpit" + current date + "Fideltour" badge
+
+Top KPI cards (4 in a row):
+- Traffic: 1,240 | +8% vs last week | orange
+- Leads: 387 | +31% | pink  
+- MQLs: 94 | +24% | purple
+- SQLs: 18 | +19% | green
+Each card shows: metric name, number, trend badge, small sparkline
+
+Pipeline visualization (horizontal funnel):
+5 stages with counts and conversion rates between them:
+Market Research (847) → 45% → Enrichment (383) → 48% → 
+Active Cadence (183) → 37% → Nurturing (68) → 26% → SQL (18)
+Show as connected arrow shapes with stage counts
+
+Today's Tasks panel (right side):
+- 🔴 "2 leads replied - action required" (urgent badge)
+- ⚡ "3 leads with Contact Value > 40 - review" (warning badge)  
+- 📧 "Spain Boutique cadence - 45 emails scheduled today" (info badge)
+- 🔵 "5 new hotels enriched and ready" (success badge)
+Each task is clickable (just visual for now)
+
+Weekly SQL Target:
+Progress bar: 8/10 SQLs this week
+"80% of weekly target achieved"
+
+Recent Activity feed (bottom):
+List of 5 recent events with timestamps, icons, descriptions
+
+## SCREEN 2: HOTEL DATABASE
+
+Header: "Hotel Database" + total count badge + "+ Import" button
+
+Filter bar (horizontal):
+- Country dropdown: [Spain ▼] with options: Spain, Mexico, Colombia, Panama, Peru
+- Region dropdown: [All regions ▼] - changes based on country
+- Category: checkbox pills [3★] [4★] [5★] [GL] 
+- Type: checkbox pills [Boutique] [Urban] [Resort] [Rural]
+- Rooms: range selector [20-50] [50-100] [100-200] [200+]
+- ICP Score: [All] [>60] [>75] [>90]
+- Status: [All] [New] [Active] [Hibernated] [Disqualified]
+- [Search] and [Reset filters] buttons
+
+Results table (below filters):
+Columns: checkbox | Hotel Name | Location | Category | Rooms | PMS | 
+         ICP Score (with colored bar) | Contact Value | Status | Last Contact | Actions
+
+Show 12 mock hotels with realistic data:
+Mix of Spanish and LATAM hotels, various categories
+ICP Scores ranging 45-94
+Some with Contact Values already started
+Status variety: New, In Cadence, Nurturing, SQL
+
+Bulk action bar (appears when rows selected):
+"X selected" + [Add to cadence ▼] [Enrich with AI] [Blacklist] [Export]
+
+Pagination: showing 1-12 of 847 results
+
+## SCREEN 3: LEAD PROFILE (Hotel Detail)
+
+Accessible by clicking any hotel in the database.
+Show back arrow + hotel name in header.
+
+Two column layout:
+
+LEFT COLUMN:
+Hotel Info card:
+- Hotel name (large), star rating, city/country
+- Type badge (Boutique/Urban/Resort)
+- Rooms, PMS system, Website
+- "Has loyalty program: ❌ No" (highlighted as opportunity)
+- Annual revenue estimate
+- TripAdvisor/Booking rating
+
+AI Briefing card (highlighted with indigo border):
+Title: "🤖 AI Hotel Agent Briefing"
+Content box with generated text:
+"Hotel boutique 4★ in Barcelona with 72 rooms. Currently using Mews 
+as PMS but no active loyalty program detected. TripAdvisor reviews 
+mention high guest satisfaction but low return visit rates — direct 
+pain point for Fideltour's loyalty module. Director has been in role 
+3+ years indicating stability. Recommended cadence: Spain Boutique 4-5★"
+Below: [Regenerate] button + "Generated 2h ago"
+
+Contact History timeline:
+Chronological list of all touchpoints:
+- Email sent/opened/clicked indicators
+- LinkedIn actions
+- Scheduled upcoming actions (grayed out)
+
+RIGHT COLUMN:
+Decision Maker card:
+- Name, title, photo placeholder (initials avatar)
+- LinkedIn button, Email (masked: m.p***@hotel***.com)
+- Email verified badge
+- "Decision maker confirmed" badge
+
+Contact Value Score card (most important):
+Large circular score: 34/100 with color (red 0-30, amber 30-60, green 60+)
+Three sub-scores with progress bars:
+- Company Score (ICP fit): 32/40
+- Person Score: 12/30  
+- Behavior Score: 2/30 (low, highlighted)
+Below each score: list of what's contributing
+
+Current Cadence card:
+- "Spain Boutique 4-5★" cadence name
+- Current step: "Step 3 of 8 - Email #2 scheduled"
+- Next action: tomorrow at 10:00
+- [Change cadence] [Pause] buttons
+
+Quick Actions:
+[Add note] [Schedule task] [Blacklist] [Move to SQL]
+
+## SCREEN 4: CADENCES (Flow Builder)
+
+Left panel: list of cadences
+- Each shows: name, status (active/paused/draft), leads count, response rate
+- [+ New Cadence] button at top
+- 4 mock cadences:
+  * 🟢 Spain Boutique 4-5★ (142 leads, 18.3% response)
+  * 🟢 LATAM Independent Hotels (67 leads, 11.7% response)
+  * 🟡 Recycled Q4 2025 (23 leads, 8.1% response)
+  * ⚪ Spain Small Chains (0 leads, draft)
+
+Right panel: Flow Builder for selected cadence
+Visual node-based flow (simplified, not drag-drop yet):
+Show each step as a card with:
+- Day number badge
+- Action type icon (email/linkedin/whatsapp/task)
+- Action description
+- Condition branches (if/else paths) shown as split lines
+- Small metrics badge on each step (sent/opened/replied)
+
+Steps for "Spain Boutique" cadence:
+Day 1: 📧 Email #1 - Personalized introduction
+  → Opened? YES → Day 3: 💼 LinkedIn connection request
+  → Opened? NO  → Day 3: 📧 Email #1B - Alternative subject (A/B)
+Day 6: 💼 LinkedIn - Follow-up message (if connected)
+Day 9: 📧 Email #2 - Pain point + Academy resource
+  → Contact Value > 40? YES → 🔔 Notify SDR immediately
+Day 12: 📱 WhatsApp (if number available)
+Day 18: 📧 Email #3 - Breakup email
+Day 25: ♻️ Hibernate 60 days
+
+Bottom of flow: cadence stats summary
+Total steps: 7 | Avg completion: 4.2 steps | Best step: Day 9 email
+
+## SCREEN 5: UNIFIED INBOX (Unibox)
+
+Left panel: conversation list
+Filter tabs: [All 7] [Unread 3] [Requires Action 2] [Handled]
+
+Each conversation item shows:
+- Priority indicator (red dot = urgent, yellow = normal)
+- Contact name + hotel name
+- Channel icon (email/linkedin/whatsapp)
+- Message preview (truncated)
+- Contact Value badge
+- Time ago
+
+Mock conversations:
+1. 🔴 Marc Puig - Hotel Tres Puntes | Email reply: "Hola, me interesa saber más..." | CV: 34 | 2h ago
+2. 🔴 Ana García - Hotel Boutique Palma | LinkedIn accepted connection | CV: 22 | 4h ago  
+3. 🟡 Carlos Méndez - Hotel Ciudad CDMX | "Ahora mismo no es el mejor momento" | CV: 18 | Yesterday
+4. ⚫ Laura Vega - Hotel Bogotá Centro | Email opened (no reply) | CV: 28 | Yesterday
+5. ⚫ Roberto Kim - Hotel Lima Miraflores | Email #1 sent | CV: 12 | 2 days ago
+
+Right panel: conversation detail
+When a conversation is selected show:
+- Contact header with name, hotel, CV score, cadence
+- Full message thread view
+- Channel indicator
+- Suggested AI reply (in a suggested box with "Use this reply" button)
+- Reply composer at bottom
+- Action buttons: [Mark handled] [Move to nurturing] [Escalate to AE] [Blacklist]
+
+## SCREEN 6: ANALYTICS
+
+Header: "GTM Analytics" + date range picker [Last 7 days ▼]
+
+Row 1 - Funnel Conversion chart:
+Bar chart showing conversion rates at each stage:
+Traffic→Lead: 10.2% | Lead→MQL: 11.8% | MQL→SQL: 26.3% | SQL→Won: 23.1%
+Each bar colored by performance vs target (green=above, amber=close, red=below)
+
+Row 2 - Two charts side by side:
+LEFT: "Cadence Performance" - horizontal bar chart
+Each cadence with response rate bar
+Spain Boutique: 18.3% | LATAM: 11.7% | Recycled: 8.1%
+
+RIGHT: "Channel Effectiveness" - donut/pie chart
+Email replies: 12.3% | LinkedIn acceptance: 31.4% | WhatsApp response: 47.2%
+
+Row 3 - Two charts side by side:
+LEFT: "Contact Value Distribution" - histogram
+How many leads are in each CV range: 0-10, 10-20, 20-30, 30-40, 40-50, 50+
+
+RIGHT: "SQLs Generated - Weekly" - line chart
+Last 8 weeks of SQL generation with target line
+
+Row 4 - KPI table:
+Full table with all KPIs from Pedro Atienza framework:
+Basic KPIs | Conversion Rates | Sales Rep Activity
+Each metric with: current value, target, trend arrow, status badge
+
+## MOCK DATA REQUIREMENTS
+
+Create a mockData.ts file with:
+- 20 hotels (mix of Spain and LATAM, realistic names and data)
+- 5 cadences with steps
+- 15 conversations for unibox
+- Analytics data for charts
+- Recent activity feed items
+
+Hotel names should be realistic (Spanish/LATAM style):
+Spain: Hotel Arts Barcelona, Boutique Can Mostatxins Palma, 
+Hotel Mercer Barcelona, Only YOU Sevilla, etc.
+LATAM: Hotel Casa Dann Carlton Bogotá, Presidente InterContinental 
+Ciudad de México, Miraflores Park Hotel Lima, etc.
+
+## NAVIGATION & UX
+
+- Sidebar: fixed left, 240px wide, shows icon + label
+- Active state: indigo background on sidebar item
+- All screen transitions: instant (no animation needed for MVP)
+- Clicking hotel in database → goes to Lead Profile screen
+- Clicking back arrow in Lead Profile → returns to database
+- Clicking conversation in Unibox → opens detail in right panel
+- Responsive: desktop only (min-width 1280px)
+- No authentication needed (direct app access)
+
+## IMPORTANT NOTES
+
+- All data is mock/hardcoded - no API calls
+- Focus on visual completeness over functionality
+- Every screen should look production-ready
+- Use realistic numbers that make business sense for a hotel SaaS
+- Spanish language for all UI labels and content
+- The app name in the sidebar header: "GTM Cockpit" with Fideltour logo 
+  placeholder (use a simple indigo rounded square with "F" letter)
