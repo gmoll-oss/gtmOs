@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +28,11 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { aiPlaybook, type AIPlaybookData } from "@/lib/mockData";
+import { usePlaybook } from "@/lib/hooks/useData";
 
 export default function AIPlaybook() {
-  const [data, setData] = useState<AIPlaybookData>({ ...aiPlaybook });
+  const { data: playbookData, isLoading: playbookLoading } = usePlaybook() as { data: any; isLoading: boolean };
+  const [data, setData] = useState<any>({ productsServices: [], valuePropositions: [], competitors: [], aiVariables: { variables: [] }, testimonials: [] });
   const [isFilling, setIsFilling] = useState(false);
   const [activeTab, setActiveTab] = useState("company");
   const [isEditing, setIsEditing] = useState(false);
@@ -39,23 +40,27 @@ export default function AIPlaybook() {
   const [newValueProp, setNewValueProp] = useState("");
   const [newCompetitor, setNewCompetitor] = useState("");
 
+  useEffect(() => {
+    if (playbookData && !data.companyName) setData(playbookData);
+  }, [playbookData]);
+
   const handleFillWithAI = () => {
     setIsFilling(true);
     setTimeout(() => {
-      setData({ ...aiPlaybook });
+      if (playbookData) setData({ ...playbookData });
       setIsFilling(false);
     }, 1500);
   };
 
-  const updateField = (field: keyof AIPlaybookData, value: string) => {
-    setData((prev) => ({ ...prev, [field]: value }));
+  const updateField = (field: string, value: string) => {
+    setData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   const addProduct = () => {
     if (!newProduct.trim()) return;
     setData((prev) => ({
       ...prev,
-      productsServices: [...prev.productsServices, newProduct.trim()],
+      productsServices: [...(prev.productsServices || []), newProduct.trim()],
     }));
     setNewProduct("");
   };
@@ -63,7 +68,7 @@ export default function AIPlaybook() {
   const removeProduct = (index: number) => {
     setData((prev) => ({
       ...prev,
-      productsServices: prev.productsServices.filter((_, i) => i !== index),
+      productsServices: (prev.productsServices || []).filter((_: any, i: number) => i !== index),
     }));
   };
 
@@ -71,7 +76,7 @@ export default function AIPlaybook() {
     if (!newValueProp.trim()) return;
     setData((prev) => ({
       ...prev,
-      valuePropositions: [...prev.valuePropositions, newValueProp.trim()],
+      valuePropositions: [...(prev.valuePropositions || []), newValueProp.trim()],
     }));
     setNewValueProp("");
   };
@@ -79,7 +84,7 @@ export default function AIPlaybook() {
   const removeValueProp = (index: number) => {
     setData((prev) => ({
       ...prev,
-      valuePropositions: prev.valuePropositions.filter((_, i) => i !== index),
+      valuePropositions: (prev.valuePropositions || []).filter((_: any, i: number) => i !== index),
     }));
   };
 
@@ -87,7 +92,7 @@ export default function AIPlaybook() {
     if (!newCompetitor.trim()) return;
     setData((prev) => ({
       ...prev,
-      competitors: [...prev.competitors, newCompetitor.trim()],
+      competitors: [...(prev.competitors || []), newCompetitor.trim()],
     }));
     setNewCompetitor("");
   };
@@ -95,7 +100,7 @@ export default function AIPlaybook() {
   const removeCompetitor = (index: number) => {
     setData((prev) => ({
       ...prev,
-      competitors: prev.competitors.filter((_, i) => i !== index),
+      competitors: (prev.competitors || []).filter((_: any, i: number) => i !== index),
     }));
   };
 
@@ -271,12 +276,12 @@ export default function AIPlaybook() {
                   Productos y Servicios
                 </CardTitle>
                 <Badge variant="secondary" className="text-xs">
-                  {data.productsServices.length}
+                  {(data.productsServices || []).length}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-2">
-                  {data.productsServices.map((item, index) => (
+                  {(data.productsServices || []).map((item: any, index: number) => (
                     <div
                       key={index}
                       className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-muted/50"
@@ -325,12 +330,12 @@ export default function AIPlaybook() {
                   Propuestas de Valor
                 </CardTitle>
                 <Badge variant="secondary" className="text-xs">
-                  {data.valuePropositions.length}
+                  {(data.valuePropositions || []).length}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-2">
-                  {data.valuePropositions.map((item, index) => (
+                  {(data.valuePropositions || []).map((item: any, index: number) => (
                     <div
                       key={index}
                       className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-muted/50"
@@ -405,7 +410,7 @@ export default function AIPlaybook() {
                   </p>
                 </div>
                 <Badge variant="secondary" className="text-xs">
-                  {data.aiVariables.length}
+                  {(data.aiVariables?.variables || []).length}
                 </Badge>
               </CardHeader>
               <CardContent>
@@ -420,7 +425,7 @@ export default function AIPlaybook() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.aiVariables.map((variable, index) => (
+                      {(data.aiVariables?.variables || []).map((variable: any, index: number) => (
                         <tr
                           key={index}
                           className="border-b last:border-b-0"
@@ -524,12 +529,12 @@ export default function AIPlaybook() {
                   Competidores
                 </CardTitle>
                 <Badge variant="secondary" className="text-xs">
-                  {data.competitors.length}
+                  {(data.competitors || []).length}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-2">
-                  {data.competitors.map((item, index) => (
+                  {(data.competitors || []).map((item: any, index: number) => (
                     <Badge
                       key={index}
                       variant="outline"
@@ -574,11 +579,11 @@ export default function AIPlaybook() {
                   Testimonios de Clientes
                 </CardTitle>
                 <Badge variant="secondary" className="text-xs">
-                  {data.testimonials.length}
+                  {(data.testimonials || []).length}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-3">
-                {data.testimonials.map((testimonial, index) => (
+                {(data.testimonials || []).map((testimonial: any, index: number) => (
                   <div
                     key={index}
                     className="p-4 rounded-md bg-muted/50 space-y-2"

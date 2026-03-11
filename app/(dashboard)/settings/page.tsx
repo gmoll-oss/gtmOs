@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,7 @@ import {
   Trash2,
   Plus,
 } from "lucide-react";
-import { suppressionList, exclusionRules } from "@/lib/mockData";
-import type { ExclusionRule } from "@/lib/mockData";
+import { useExclusionRules, useSuppressions } from "@/lib/hooks/useData";
 
 function GeneralTab() {
   return (
@@ -88,8 +87,12 @@ function GeneralTab() {
 }
 
 function ExclusionTab() {
-  const [rules, setRules] = useState<ExclusionRule[]>(exclusionRules);
-  const [entries] = useState(suppressionList);
+  const { data: exclusionRulesData = [] } = useExclusionRules() as { data: any[] };
+  const { data: suppressionData = [] } = useSuppressions() as { data: any[] };
+  const [rules, setRules] = useState<any[]>([]);
+  const [entries, setEntries] = useState<any[]>([]);
+  useEffect(() => { if (exclusionRulesData.length > 0 && rules.length === 0) setRules(exclusionRulesData); }, [exclusionRulesData]);
+  useEffect(() => { if (suppressionData.length > 0 && entries.length === 0) setEntries(suppressionData); }, [suppressionData]);
 
   const toggleRule = (id: string) => {
     setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));

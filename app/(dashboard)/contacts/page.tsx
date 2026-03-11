@@ -33,13 +33,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  leads,
-  prospectLists,
-  campaigns,
-  LEAD_STATUS_CONFIG,
-  type LeadStatus,
-} from "@/lib/mockData";
+import { useLeads, useLists as useListsData, useCampaigns } from "@/lib/hooks/useData";
+import { LEAD_STATUS_CONFIG, type LeadStatus } from "@/lib/mockData";
 import { useToast } from "@/lib/use-toast";
 
 const ITEMS_PER_PAGE = 15;
@@ -78,26 +73,29 @@ function formatDate(dateStr: string) {
   });
 }
 
-function getListsForLead(leadId: string): string[] {
+function getListsForLead(leadId: string, prospectLists: any[]): string[] {
   return prospectLists
-    .filter((list) => list.contactIds.includes(leadId))
-    .map((list) => list.name);
+    .filter((list: any) => list.contactIds?.includes(leadId))
+    .map((list: any) => list.name);
 }
 
-function getCampaignsForLead(leadId: string): string[] {
+function getCampaignsForLead(leadId: string, campaigns: any[], prospectLists: any[]): string[] {
   return campaigns
-    .filter((c) =>
-      c.listIds.some((listId) => {
-        const list = prospectLists.find((l) => l.id === listId);
-        return list?.contactIds.includes(leadId);
+    .filter((c: any) =>
+      c.listIds?.some((listId: string) => {
+        const list = prospectLists.find((l: any) => l.id === listId);
+        return list?.contactIds?.includes(leadId);
       })
     )
-    .map((c) => c.name);
+    .map((c: any) => c.name);
 }
 
 export default function Contacts() {
   const router = useRouter();
   const { toast } = useToast();
+  const { data: leads = [] } = useLeads() as { data: any[] };
+  const { data: prospectLists = [] } = useListsData() as { data: any[] };
+  const { data: campaigns = [] } = useCampaigns() as { data: any[] };
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [enrichmentFilter, setEnrichmentFilter] = useState<string>("all");
@@ -514,7 +512,7 @@ export default function Contacts() {
             <tbody>
               {paginatedLeads.map((lead) => {
                 const statusConfig = LEAD_STATUS_CONFIG[lead.status];
-                const leadLists = getListsForLead(lead.id);
+                const leadLists = getListsForLead(lead.id, prospectLists);
                 return (
                   <tr
                     key={lead.id}

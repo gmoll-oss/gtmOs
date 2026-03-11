@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { inboxThreads, AI_TAG_CONFIG, type InboxThread, type InboxMessage } from "@/lib/mockData";
+import { useInboxThreads } from "@/lib/hooks/useData";
+import { AI_TAG_CONFIG } from "@/lib/mockData";
 
 type AiTagFilter = "all" | "meeting_requested" | "interested" | "not_interested" | "auto_reply" | "question" | "out_of_office";
 
@@ -203,15 +204,14 @@ function ConversationPanel({ thread }: { thread: InboxThread }) {
 }
 
 export default function InboxPage() {
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
-    inboxThreads.length > 0 ? inboxThreads[0].id : null
-  );
+  const { data: inboxThreads = [] } = useInboxThreads() as { data: any[] };
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [tagFilter, setTagFilter] = useState<AiTagFilter>("all");
 
   const filteredThreads = useMemo(() => {
     let threads = [...inboxThreads].sort(
-      (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+      (a: any, b: any) => new Date(b.updatedAt || b.lastMessageAt || 0).getTime() - new Date(a.updatedAt || a.lastMessageAt || 0).getTime()
     );
 
     if (searchQuery.trim()) {

@@ -41,7 +41,7 @@ import {
   Trash2,
   ArrowDown,
 } from "lucide-react";
-import { campaigns as mockCampaigns, type Campaign, type CampaignStep } from "@/lib/mockData";
+import { useCampaigns } from "@/lib/hooks/useData";
 
 const STEP_TYPE_CONFIG: Record<string, { label: string; icon: typeof Mail; color: string }> = {
   email: { label: "Email Inicial", icon: MailPlus, color: "#3b82f6" },
@@ -67,7 +67,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const TEMPLATE_VARIABLES = ["{empresa}", "{nombre}", "{rol}", "{ciudad}", "{pain}", "{propuesta}"];
 
-function VisualFlowBuilder({ steps }: { steps: CampaignStep[] }) {
+function VisualFlowBuilder({ steps }: { steps: any[] }) {
   return (
     <div className="relative flex flex-col items-center gap-0">
       {steps.map((step, index) => {
@@ -181,7 +181,7 @@ function VisualFlowBuilder({ steps }: { steps: CampaignStep[] }) {
   );
 }
 
-function CampaignCard({ campaign, onEdit }: { campaign: Campaign; onEdit: (c: Campaign) => void }) {
+function CampaignCard({ campaign, onEdit }: { campaign: any; onEdit: (c: any) => void }) {
   const [expanded, setExpanded] = useState(false);
   const openRate = campaign.totalSent > 0 ? Math.round((campaign.totalOpened / campaign.totalSent) * 100) : 0;
   const replyRate = campaign.totalSent > 0 ? Math.round((campaign.totalReplied / campaign.totalSent) * 100) : 0;
@@ -281,10 +281,10 @@ function StepEditor({
   onChange,
   onRemove,
 }: {
-  step: CampaignStep;
+  step: any;
   index: number;
   totalSteps: number;
-  onChange: (updated: CampaignStep) => void;
+  onChange: (updated: any) => void;
   onRemove: () => void;
 }) {
   const config = STEP_TYPE_CONFIG[step.type] || STEP_TYPE_CONFIG.email;
@@ -445,18 +445,18 @@ function StepEditor({
 }
 
 export default function Campaigns() {
-  const [campaignsList] = useState<Campaign[]>(mockCampaigns);
-  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const { data: campaignsList = [] } = useCampaigns() as { data: any[] };
+  const [editingCampaign, setEditingCampaign] = useState<any | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
-  const [editSteps, setEditSteps] = useState<CampaignStep[]>([]);
+  const [editSteps, setEditSteps] = useState<any[]>([]);
 
-  const handleEdit = (campaign: Campaign) => {
+  const handleEdit = (campaign: any) => {
     setEditingCampaign(campaign);
-    setEditSteps(campaign.steps.map((s) => ({ ...s })));
+    setEditSteps(campaign.steps.map((s: any) => ({ ...s })));
   };
 
-  const handleStepChange = (index: number, updated: CampaignStep) => {
+  const handleStepChange = (index: number, updated: any) => {
     setEditSteps((prev) => prev.map((s, i) => (i === index ? updated : s)));
   };
 
@@ -465,7 +465,7 @@ export default function Campaigns() {
   };
 
   const handleAddEmailStep = () => {
-    const newStep: CampaignStep = {
+    const newStep: any = {
       id: `cs-new-${Date.now()}`,
       order: editSteps.length + 1,
       type: editSteps.length === 0 ? "email" : "follow_up",
@@ -481,7 +481,7 @@ export default function Campaigns() {
   };
 
   const handleAddWaitStep = () => {
-    const newStep: CampaignStep = {
+    const newStep: any = {
       id: `cs-wait-${Date.now()}`,
       order: editSteps.length + 1,
       type: "wait",
@@ -497,7 +497,7 @@ export default function Campaigns() {
   };
 
   const handleAddConditionStep = () => {
-    const newStep: CampaignStep = {
+    const newStep: any = {
       id: `cs-cond-${Date.now()}`,
       order: editSteps.length + 1,
       type: "condition",
@@ -517,7 +517,7 @@ export default function Campaigns() {
 
   const handleCreateNew = () => {
     setShowCreateDialog(false);
-    const newCampaign: Campaign = {
+    const newCampaign: any = {
       id: `camp-new-${Date.now()}`,
       name: newName || "Nueva Campaña",
       status: "draft",

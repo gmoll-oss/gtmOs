@@ -29,17 +29,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import {
-  leads,
-  campaigns,
-  activityFeed,
-  companies,
-  inboxThreads,
-  identities,
-  LEAD_STATUS_CONFIG,
-  type ActivityItem,
-  type LeadStatus,
-} from "@/lib/mockData";
+import { useLeads, useCampaigns, useActivityFeed, useCompanies, useInboxThreads, useIdentities } from "@/lib/hooks/useData";
+import { LEAD_STATUS_CONFIG } from "@/lib/mockData";
+import type { LeadStatus } from "@/lib/mockData";
 
 type FilterType = "all" | "discovery" | "enrichment" | "email" | "sync";
 
@@ -101,32 +93,39 @@ export default function Activity() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { data: leads = [] } = useLeads() as { data: any[] };
+  const { data: companies = [] } = useCompanies() as { data: any[] };
+  const { data: campaigns = [] } = useCampaigns() as { data: any[] };
+  const { data: inboxThreads = [] } = useInboxThreads() as { data: any[] };
+  const { data: identities = [] } = useIdentities() as { data: any[] };
+  const { data: activityFeed = [] } = useActivityFeed() as { data: any[] };
+
   const statusCounts = useMemo(() => {
-    const counts: Record<LeadStatus, number> = {} as Record<LeadStatus, number>;
+    const counts: Record<string, number> = {};
     for (const s of PIPELINE_ORDER) counts[s] = 0;
-    for (const lead of leads) counts[lead.status]++;
+    for (const lead of leads) counts[lead.status] = (counts[lead.status] || 0) + 1;
     return counts;
-  }, []);
+  }, [leads]);
 
   const totalContacts = leads.length;
   const totalCompanies = companies.length;
-  const totalEmailsSent = campaigns.reduce((sum, c) => sum + c.totalSent, 0);
-  const totalReplied = campaigns.reduce((sum, c) => sum + c.totalReplied, 0);
+  const totalEmailsSent = campaigns.reduce((sum: number, c: any) => sum + c.totalSent, 0);
+  const totalReplied = campaigns.reduce((sum: number, c: any) => sum + c.totalReplied, 0);
   const overallReplyRate = totalEmailsSent > 0 ? Math.round((totalReplied / totalEmailsSent) * 100) : 0;
-  const unreadInbox = inboxThreads.filter((t) => t.unread).length;
-  const activeCampaigns = campaigns.filter((c) => c.status === "active").length;
-  const todaySent = identities.reduce((sum, i) => sum + i.sentToday, 0);
-  const dailyLimit = identities.reduce((sum, i) => sum + i.dailyLimit, 0);
+  const unreadInbox = inboxThreads.filter((t: any) => t.unread).length;
+  const activeCampaigns = campaigns.filter((c: any) => c.status === "active").length;
+  const todaySent = identities.reduce((sum: number, i: any) => sum + i.sentToday, 0);
+  const dailyLimit = identities.reduce((sum: number, i: any) => sum + i.dailyLimit, 0);
 
   const sortedFeed = useMemo(() => {
-    return [...activityFeed].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, []);
+    return [...activityFeed].sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [activityFeed]);
 
   const filteredFeed = useMemo(() => {
-    return sortedFeed.filter((item) => {
+    return sortedFeed.filter((item: any) => {
       if (filter !== "all") {
-        const config = ACTIVITY_TYPE_CONFIG[item.type];
-        if (config.filterGroup !== filter) return false;
+        const config = ACTIVITY_TYPE_CONFIG[item.type as keyof typeof ACTIVITY_TYPE_CONFIG];
+        if (!config || config.filterGroup !== filter) return false;
       }
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -141,7 +140,7 @@ export default function Activity() {
   }, [sortedFeed, filter, searchQuery]);
 
   const groupedByDate = useMemo(() => {
-    const groups: { date: string; items: ActivityItem[] }[] = [];
+    const groups: { date: string; items: any[] }[] = [];
     let currentDate = "";
     for (const item of filteredFeed) {
       const dateKey = new Date(item.timestamp).toDateString();

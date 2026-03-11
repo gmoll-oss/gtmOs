@@ -46,7 +46,7 @@ import {
   Building2,
   Trash2,
 } from "lucide-react";
-import { leads, type ProspectList } from "@/lib/mockData";
+import { useLeads } from "@/lib/hooks/useData";
 import { useLists, isDynamicList, type DynamicList, type ApolloContact } from "@/lib/listsStore";
 import { useToast } from "@/lib/use-toast";
 
@@ -71,7 +71,7 @@ function ListCard({
   onDelete,
   isDynamic,
 }: {
-  list: ProspectList | DynamicList;
+  list: any;
   onClick: () => void;
   onDelete?: () => void;
   isDynamic: boolean;
@@ -413,16 +413,17 @@ function MockListDetailView({
   list,
   onBack,
 }: {
-  list: ProspectList;
+  list: any;
   onBack: () => void;
 }) {
   const { toast } = useToast();
   const router = useRouter();
+  const { data: leads = [] } = useLeads() as { data: any[] };
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
 
-  const contactsInList = leads.filter((l) => list.contactIds.includes(l.id) && !removedIds.has(l.id));
+  const contactsInList = leads.filter((l: any) => list.contactIds?.includes(l.id) && !removedIds.has(l.id));
   const filteredContacts = contactsInList.filter(
     (c) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -693,7 +694,7 @@ export default function ListsPage() {
       );
     }
 
-    const mockList = allLists.find((l) => l.id === selectedListId && "contactIds" in l) as ProspectList | undefined;
+    const mockList = allLists.find((l: any) => l.id === selectedListId && "contactIds" in l) as any;
     if (mockList) {
       return (
         <div className="p-4 h-full overflow-auto">

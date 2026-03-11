@@ -15,7 +15,8 @@ import {
   TrendingDown,
   ArrowRight,
 } from "lucide-react";
-import { leads, campaigns, LEAD_STATUS_CONFIG } from "@/lib/mockData";
+import { useLeads, useCampaigns } from "@/lib/hooks/useData";
+import { LEAD_STATUS_CONFIG } from "@/lib/mockData";
 import {
   BarChart,
   Bar,
@@ -36,72 +37,29 @@ import {
 const TEAL = "#25CAD2";
 const NAVY = "#00395E";
 
-const kpiData = [
-  {
-    title: "Total Contactos",
-    value: leads.length.toString(),
-    change: "+12%",
-    trend: "up" as const,
-    icon: Users,
-    description: "vs. mes anterior",
-  },
-  {
-    title: "Emails Enviados",
-    value: campaigns.reduce((acc, c) => acc + c.totalSent, 0).toString(),
-    change: "+8%",
-    trend: "up" as const,
-    icon: Send,
-    description: "vs. mes anterior",
-  },
-  {
-    title: "Tasa de Apertura",
-    value: (() => {
-      const sent = campaigns.reduce((a, c) => a + c.totalSent, 0);
-      const opened = campaigns.reduce((a, c) => a + c.totalOpened, 0);
-      return sent > 0 ? `${Math.round((opened / sent) * 100)}%` : "0%";
-    })(),
-    change: "+3%",
-    trend: "up" as const,
-    icon: Mail,
-    description: "vs. mes anterior",
-  },
-  {
-    title: "Tasa de Respuesta",
-    value: (() => {
-      const sent = campaigns.reduce((a, c) => a + c.totalSent, 0);
-      const replied = campaigns.reduce((a, c) => a + c.totalReplied, 0);
-      return sent > 0 ? `${Math.round((replied / sent) * 100)}%` : "0%";
-    })(),
-    change: "+2%",
-    trend: "up" as const,
-    icon: MessageSquare,
-    description: "vs. mes anterior",
-  },
-  {
-    title: "Reuniones Agendadas",
-    value: "5",
-    change: "+25%",
-    trend: "up" as const,
-    icon: CalendarCheck,
-    description: "vs. mes anterior",
-  },
-  {
-    title: "Pipeline Value",
-    value: "$48.5K",
-    change: "+18%",
-    trend: "up" as const,
-    icon: DollarSign,
-    description: "vs. mes anterior",
-  },
-];
+function getKpiData(leads: any[], campaigns: any[]) {
+  const sent = campaigns.reduce((a: number, c: any) => a + (c.totalSent || 0), 0);
+  const opened = campaigns.reduce((a: number, c: any) => a + (c.totalOpened || 0), 0);
+  const replied = campaigns.reduce((a: number, c: any) => a + (c.totalReplied || 0), 0);
+  return [
+    { title: "Total Contactos", value: leads.length.toString(), change: "+12%", trend: "up" as const, icon: Users, description: "vs. mes anterior" },
+    { title: "Emails Enviados", value: sent.toString(), change: "+8%", trend: "up" as const, icon: Send, description: "vs. mes anterior" },
+    { title: "Tasa de Apertura", value: sent > 0 ? `${Math.round((opened / sent) * 100)}%` : "0%", change: "+3%", trend: "up" as const, icon: Mail, description: "vs. mes anterior" },
+    { title: "Tasa de Respuesta", value: sent > 0 ? `${Math.round((replied / sent) * 100)}%` : "0%", change: "+2%", trend: "up" as const, icon: MessageSquare, description: "vs. mes anterior" },
+    { title: "Reuniones Agendadas", value: "5", change: "+25%", trend: "up" as const, icon: CalendarCheck, description: "vs. mes anterior" },
+    { title: "Pipeline Value", value: "$48.5K", change: "+18%", trend: "up" as const, icon: DollarSign, description: "vs. mes anterior" },
+  ];
+}
 
-const funnelStages = [
-  { name: "Descubiertos", count: leads.filter(l => l.status === "discovered").length + leads.filter(l => l.status === "qualified").length + leads.filter(l => l.status === "enriched").length + leads.filter(l => l.status === "eligible").length + leads.filter(l => l.status === "in_sequence").length + leads.filter(l => l.status === "engaged").length + leads.filter(l => l.status === "ready_to_sync").length + leads.filter(l => l.status === "synced").length, color: "#94a3b8" },
-  { name: "Enriquecidos", count: leads.filter(l => ["enriched", "eligible", "in_sequence", "engaged", "ready_to_sync", "synced"].includes(l.status)).length, color: "#a78bfa" },
-  { name: "En Campaña", count: leads.filter(l => ["in_sequence", "engaged", "ready_to_sync", "synced"].includes(l.status)).length, color: TEAL },
-  { name: "Contactados", count: leads.filter(l => ["engaged", "ready_to_sync", "synced"].includes(l.status)).length, color: "#fbbf24" },
-  { name: "Sincronizados", count: leads.filter(l => l.status === "synced").length, color: "#22c55e" },
-];
+function getFunnelStages(leads: any[]) {
+  return [
+    { name: "Descubiertos", count: leads.length, color: "#94a3b8" },
+    { name: "Enriquecidos", count: leads.filter((l: any) => ["enriched", "eligible", "in_sequence", "engaged", "ready_to_sync", "synced"].includes(l.status)).length, color: "#a78bfa" },
+    { name: "En Campaña", count: leads.filter((l: any) => ["in_sequence", "engaged", "ready_to_sync", "synced"].includes(l.status)).length, color: TEAL },
+    { name: "Contactados", count: leads.filter((l: any) => ["engaged", "ready_to_sync", "synced"].includes(l.status)).length, color: "#fbbf24" },
+    { name: "Sincronizados", count: leads.filter((l: any) => l.status === "synced").length, color: "#22c55e" },
+  ];
+}
 
 const activityOverTime = [
   { week: "Sem 1", Descubrimientos: 28, Enriquecimientos: 18, Emails: 35, Respuestas: 6 },
@@ -113,9 +71,14 @@ const activityOverTime = [
 ];
 
 export default function Analytics() {
+  const { data: leads = [] } = useLeads() as { data: any[] };
+  const { data: campaigns = [] } = useCampaigns() as { data: any[] };
   const [timeRange, setTimeRange] = useState("30d");
 
-  const campaignPerformance = campaigns.filter(c => c.status !== "draft").map(c => {
+  const kpiData = getKpiData(leads, campaigns);
+  const funnelStages = getFunnelStages(leads);
+
+  const campaignPerformance = campaigns.filter((c: any) => c.status !== "draft").map((c: any) => {
     const openRate = c.totalSent > 0 ? Math.round((c.totalOpened / c.totalSent) * 100) : 0;
     const replyRate = c.totalSent > 0 ? Math.round((c.totalReplied / c.totalSent) * 100) : 0;
     return {

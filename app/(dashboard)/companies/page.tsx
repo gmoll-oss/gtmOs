@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { companies, leads, enrichmentAttempts, type Company, type Lead } from "@/lib/mockData";
+import { useCompanies, useLeads, useEnrichmentAttempts } from "@/lib/hooks/useData";
 
 const ENRICHMENT_STATUS_CONFIG: Record<string, { label: string; bgClass: string; textClass: string }> = {
   enriched: { label: "Enriquecido", bgClass: "bg-emerald-100 dark:bg-emerald-900/40", textClass: "text-emerald-700 dark:text-emerald-300" },
@@ -21,15 +21,12 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function getContactsForCompany(company: Company): Lead[] {
-  return leads.filter((l) => company.contactIds.includes(l.id));
+function getContactsForCompany(company: any, allLeads: any[]): any[] {
+  return allLeads.filter((l: any) => company.contactIds?.includes(l.id));
 }
 
-function CompanyProfile({ company, onBack }: { company: Company; onBack: () => void }) {
-  const companyContacts = getContactsForCompany(company);
-  const companyEnrichments = enrichmentAttempts.filter((ea) =>
-    company.contactIds.includes(ea.leadId)
-  );
+function CompanyProfile({ company, onBack, allLeads }: { company: any; onBack: () => void; allLeads: any[] }) {
+  const companyContacts = getContactsForCompany(company, allLeads);
   const statusCfg = ENRICHMENT_STATUS_CONFIG[company.enrichmentStatus] || ENRICHMENT_STATUS_CONFIG.pending;
 
   return (
@@ -147,6 +144,8 @@ function CompanyProfile({ company, onBack }: { company: Company; onBack: () => v
 }
 
 export default function Companies() {
+  const { data: companies = [] } = useCompanies() as { data: any[] };
+  const { data: allLeads = [] } = useLeads() as { data: any[] };
   const [search, setSearch] = useState("");
   const [industryFilter, setIndustryFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
@@ -154,11 +153,11 @@ export default function Companies() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
 
-  const industries = useMemo(() => Array.from(new Set(companies.map((c) => c.industry))).sort(), []);
-  const countries = useMemo(() => Array.from(new Set(companies.map((c) => c.country))).sort(), []);
+  const industries = useMemo(() => Array.from(new Set(companies.map((c: any) => c.industry))).sort(), [companies]);
+  const countries = useMemo(() => Array.from(new Set(companies.map((c: any) => c.country))).sort(), [companies]);
 
   const filtered = useMemo(() => {
-    return companies.filter((c) => {
+    return companies.filter((c: any) => {
       if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.domain.toLowerCase().includes(search.toLowerCase())) return false;
       if (industryFilter !== "all" && c.industry !== industryFilter) return false;
       if (countryFilter !== "all" && c.country !== countryFilter) return false;
@@ -191,7 +190,7 @@ export default function Companies() {
   if (selectedCompanyId) {
     const company = companies.find((c) => c.id === selectedCompanyId);
     if (company) {
-      return <CompanyProfile company={company} onBack={() => setSelectedCompanyId(null)} />;
+      return <CompanyProfile company={company} onBack={() => setSelectedCompanyId(null)} allLeads={allLeads} />;
     }
   }
 

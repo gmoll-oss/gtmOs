@@ -10,15 +10,19 @@ A white-label B2B SaaS platform replicating the Enginy.ai (formerly Genesy) prod
 - **Recharts** (charts and analytics)
 - **Lucide React** (icons)
 - **Shadcn UI** components
-- Mock data (currently hardcoded in lib/mockData.ts; migration to Prisma + PostgreSQL planned)
+- **Prisma 5** + **PostgreSQL** (database ORM)
+- **@tanstack/react-query** (data fetching)
+- **Next.js API routes** (backend endpoints)
+- **Zustand** (lists state management)
+- Config constants still in lib/mockData.ts (LEAD_STATUS_CONFIG, AI_TAG_CONFIG, etc.)
 
 ## Migration Status (Express → Next.js)
 - T001 ✅ Next.js 14 foundation set up (app router, configs, workflow)
 - T002 ✅ Sidebar + theme + layout migrated
 - T003 ✅ All 12 module pages migrated (using mock data)
-- T004 🔲 Prisma + PostgreSQL setup
-- T005 🔲 tRPC setup
-- T006 🔲 Connect pages to tRPC + Prisma
+- T004 ✅ Prisma + PostgreSQL setup (schema pushed, seed data loaded)
+- T005 ✅ Next.js API routes + React Query (tRPC abandoned)
+- T006 ✅ All pages connected to API + Prisma (mock data replaced)
 - T007 🔲 Better Auth setup
 - T008 🔲 Final cleanup, testing, deployment
 
@@ -63,7 +67,7 @@ Discovered → Qualified → Enriched → Eligible → In Sequence → Engaged �
 - `server/` - Old Express backend
 - `shared/` - Old shared types
 
-## Data Model (Mock)
+## Data Model (PostgreSQL via Prisma)
 - **Lead**: email, name, title, company, domain, status (pipeline), score, ICP/completeness/signal scores, exclusion info, enrichment confidence, sequence enrollment, Zoho sync status
 - **Company**: name, domain, industry, country, city, employees, source, enrichmentStatus, contactIds
 - **ProspectList**: name, contactCount, source (search/import/ai/manual), contactIds

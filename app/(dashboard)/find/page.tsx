@@ -55,14 +55,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/lib/use-toast";
-import {
-  leads,
-  enrichmentAttempts,
-  enrichmentQueue,
-  ENRICHMENT_PROVIDERS,
-  ENRICHMENT_FIELD_LABELS,
-  type EnrichmentQueueItem,
-} from "@/lib/mockData";
+import { useLeads, useEnrichmentQueue, useAllEnrichmentAttempts } from "@/lib/hooks/useData";
+import { ENRICHMENT_PROVIDERS, ENRICHMENT_FIELD_LABELS } from "@/lib/mockData";
 
 interface SearchPerson {
   id: string;
@@ -221,35 +215,38 @@ function FieldBadges({ requested, found }: { requested: string[]; found: string[
 }
 
 function EnrichmentDashboard() {
+  const { data: enrichmentQueue = [] } = useEnrichmentQueue() as { data: any[] };
+  const { data: leads = [] } = useLeads() as { data: any[] };
+  const { data: enrichmentAttempts = [] } = useAllEnrichmentAttempts() as { data: any[] };
   const [queueFilter, setQueueFilter] = useState<"all" | "processing" | "queued" | "completed" | "failed">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const queueStats = useMemo(() => {
-    const processing = enrichmentQueue.filter((q) => q.status === "processing").length;
-    const queued = enrichmentQueue.filter((q) => q.status === "queued").length;
-    const completed = enrichmentQueue.filter((q) => q.status === "completed").length;
-    const failed = enrichmentQueue.filter((q) => q.status === "failed").length;
+    const processing = enrichmentQueue.filter((q: any) => q.status === "processing").length;
+    const queued = enrichmentQueue.filter((q: any) => q.status === "queued").length;
+    const completed = enrichmentQueue.filter((q: any) => q.status === "completed").length;
+    const failed = enrichmentQueue.filter((q: any) => q.status === "failed").length;
     const total = enrichmentQueue.length;
 
-    const completedItems = enrichmentQueue.filter((q) => q.status === "completed");
+    const completedItems = enrichmentQueue.filter((q: any) => q.status === "completed");
     const avgConfidence = completedItems.length > 0
-      ? completedItems.reduce((sum, q) => sum + q.confidence, 0) / completedItems.length
+      ? completedItems.reduce((sum: number, q: any) => sum + q.confidence, 0) / completedItems.length
       : 0;
 
-    const totalFieldsRequested = completedItems.reduce((sum, q) => sum + q.fieldsRequested.length, 0);
-    const totalFieldsFound = completedItems.reduce((sum, q) => sum + q.fieldsFound.length, 0);
+    const totalFieldsRequested = completedItems.reduce((sum: number, q: any) => sum + (q.fieldsRequested?.length || 0), 0);
+    const totalFieldsFound = completedItems.reduce((sum: number, q: any) => sum + (q.fieldsFound?.length || 0), 0);
     const fieldCoverage = totalFieldsRequested > 0 ? (totalFieldsFound / totalFieldsRequested) * 100 : 0;
 
     return { processing, queued, completed, failed, total, avgConfidence, fieldCoverage };
-  }, []);
+  }, [enrichmentQueue]);
 
   const leadsEnrichmentStats = useMemo(() => {
-    const enriched = leads.filter((l) => l.lastEnrichedAt !== null).length;
-    const pending = leads.filter((l) => l.lastEnrichedAt === null && !l.excluded).length;
-    const highConfidence = leads.filter((l) => l.enrichmentConfidence >= 0.85).length;
-    const lowConfidence = leads.filter((l) => l.enrichmentConfidence > 0 && l.enrichmentConfidence < 0.7).length;
+    const enriched = leads.filter((l: any) => l.lastEnrichedAt !== null).length;
+    const pending = leads.filter((l: any) => l.lastEnrichedAt === null && !l.excluded).length;
+    const highConfidence = leads.filter((l: any) => l.enrichmentConfidence >= 0.85).length;
+    const lowConfidence = leads.filter((l: any) => l.enrichmentConfidence > 0 && l.enrichmentConfidence < 0.7).length;
     return { enriched, pending, highConfidence, lowConfidence, total: leads.length };
-  }, []);
+  }, [leads]);
 
   const providerStats = useMemo(() => {
     const stats: Record<string, { total: number; success: number; partial: number; failed: number }> = {};
@@ -263,18 +260,18 @@ function EnrichmentDashboard() {
       else if (attempt.status === "failed") stats[attempt.provider].failed++;
     }
     return stats;
-  }, []);
+  }, [enrichmentAttempts]);
 
   const filteredQueue = useMemo(() => {
     if (queueFilter === "all") return enrichmentQueue;
-    return enrichmentQueue.filter((q) => q.status === queueFilter);
-  }, [queueFilter]);
+    return enrichmentQueue.filter((q: any) => q.status === queueFilter);
+  }, [queueFilter, enrichmentQueue]);
 
   const recentHistory = useMemo(() => {
     return [...enrichmentAttempts]
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 20);
-  }, []);
+  }, [enrichmentAttempts]);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -1208,9 +1205,10 @@ function SearchTab() {
 }
 
 export default function FindEnrich() {
+  const { data: enrichmentQueue = [] } = useEnrichmentQueue() as { data: any[] };
   const [activeTab, setActiveTab] = useState<ActiveTab>("enrichment");
 
-  const processingCount = enrichmentQueue.filter((q) => q.status === "processing" || q.status === "queued").length;
+  const processingCount = enrichmentQueue.filter((q: any) => q.status === "processing" || q.status === "queued").length;
 
   return (
     <div className="flex flex-col h-full">

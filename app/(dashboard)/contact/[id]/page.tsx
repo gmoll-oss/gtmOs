@@ -31,25 +31,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import {
-  leads,
-  enrichmentAttempts,
-  eventLogs,
-  campaigns,
-  prospectLists,
-  companies,
-  LEAD_STATUS_CONFIG,
-  getLeadExclusionChecks,
-} from "@/lib/mockData";
-import type { Lead, ExclusionCheckResult } from "@/lib/mockData";
+import { LEAD_STATUS_CONFIG, getLeadExclusionChecks } from "@/lib/mockData";
+import { useLead, useEnrichmentAttempts, useEventLogs, useCampaigns, useLists, useCompanies } from "@/lib/hooks/useData";
 
 export default function ContactDetail() {
   const params = useParams();
   const router = useRouter();
+  const leadId = (params?.id as string) || "";
 
-  if (!params?.id) return null;
+  const { data: lead, isLoading } = useLead(leadId) as { data: any; isLoading: boolean };
+  const { data: leadEnrichments = [] } = useEnrichmentAttempts(leadId) as { data: any[] };
+  const { data: leadEvents = [] } = useEventLogs(leadId) as { data: any[] };
+  const { data: campaigns = [] } = useCampaigns() as { data: any[] };
+  const { data: prospectLists = [] } = useLists() as { data: any[] };
+  const { data: companiesData = [] } = useCompanies() as { data: any[] };
 
-  const lead = leads.find((l) => l.id === params.id);
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-muted-foreground">Cargando contacto...</p>
+      </div>
+    );
+  }
+
   if (!lead) {
     return (
       <div className="p-8 text-center" data-testid="text-contact-not-found">
@@ -62,14 +66,13 @@ export default function ContactDetail() {
     );
   }
 
-  const leadEnrichments = enrichmentAttempts.filter((e) => e.leadId === lead.id);
-  const leadEvents = eventLogs.filter((e) => e.leadId === lead.id).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const sortedEvents = [...leadEvents].sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   const exclusionChecks = getLeadExclusionChecks(lead);
-  const enrolledCampaign = campaigns.find((c) => c.id === lead.sequenceId);
-  const leadLists = prospectLists.filter((l) => l.contactIds.includes(lead.id));
-  const company = companies.find((c) => c.contactIds.includes(lead.id));
+  const enrolledCampaign = campaigns.find((c: any) => c.id === lead.sequenceId);
+  const leadLists = prospectLists.filter((l: any) => l.contactIds?.includes(lead.id));
+  const company = companiesData.find((c: any) => c.contactIds?.includes(lead.id));
 
-  const statusConfig = LEAD_STATUS_CONFIG[lead.status];
+  const statusConfig = LEAD_STATUS_CONFIG[lead.status as keyof typeof LEAD_STATUS_CONFIG];
 
   const getEventIcon = (type: string) => {
     switch (type) {
@@ -355,7 +358,7 @@ export default function ContactDetail() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {leadEvents.slice(0, 15).map((event) => (
+                {sortedEvents.slice(0, 15).map((event: any) => (
                   <div key={event.id} className="flex gap-3" data-testid={`event-${event.id}`}>
                     <div className="mt-0.5">{getEventIcon(event.type)}</div>
                     <div className="flex-1 min-w-0">
@@ -364,7 +367,7 @@ export default function ContactDetail() {
                     </div>
                   </div>
                 ))}
-                {leadEvents.length === 0 && (
+                {sortedEvents.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">Sin eventos registrados</p>
                 )}
               </div>

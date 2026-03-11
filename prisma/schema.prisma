@@ -1,0 +1,365 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  discovered
+  qualified
+  enriched
+  eligible
+  in_sequence
+  engaged
+  ready_to_sync
+  synced
+  excluded
+  archived
+}
+
+enum SearchJobStatus {
+  active
+  paused
+  completed
+  draft
+}
+
+enum EnrichmentStatus {
+  success
+  partial
+  failed
+  pending
+}
+
+enum SuppressionType {
+  email
+  domain
+}
+
+enum SuppressionSource {
+  manual
+  zoho
+  campaigns
+  bounce
+}
+
+enum CampaignStatus {
+  active
+  paused
+  draft
+  completed
+}
+
+enum CampaignStepType {
+  email
+  follow_up
+  wait
+  condition
+  breakup
+}
+
+enum IdentityStatus {
+  active
+  warming
+  paused
+  error
+}
+
+enum InboxAiTag {
+  meeting_requested
+  interested
+  not_interested
+  auto_reply
+  question
+  out_of_office
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
+model SearchJob {
+  id               String          @id @default(cuid())
+  name             String
+  status           SearchJobStatus @default(draft)
+  geo              String[]
+  industry         String[]
+  keywords         String[]
+  targetRoles      String[]        @map("target_roles")
+  dailyLimit       Int             @default(50) @map("daily_limit")
+  schedule         String          @default("")
+  totalDiscovered  Int             @default(0) @map("total_discovered")
+  totalQualified   Int             @default(0) @map("total_qualified")
+  lastRunAt        DateTime?       @map("last_run_at")
+  nextRunAt        DateTime?       @map("next_run_at")
+  sources          String[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  leads            Lead[]
+
+  @@map("search_jobs")
+}
+
+model Lead {
+  id                     String      @id @default(cuid())
+  email                  String      @unique
+  name                   String
+  title                  String      @default("")
+  company                String      @default("")
+  domain                 String      @default("")
+  phone                  String      @default("")
+  country                String      @default("")
+  city                   String      @default("")
+  industry               String      @default("")
+  website                String      @default("")
+  employeeCount          Int         @default(0) @map("employee_count")
+  status                 LeadStatus  @default(discovered)
+  score                  Int         @default(0)
+  icpScore               Int         @default(0) @map("icp_score")
+  completenessScore      Int         @default(0) @map("completeness_score")
+  signalScore            Int         @default(0) @map("signal_score")
+  excluded               Boolean     @default(false)
+  exclusionReason        String?     @map("exclusion_reason")
+  exclusionSource        String?     @map("exclusion_source")
+  exclusionTimestamp     DateTime?   @map("exclusion_timestamp")
+  enrichmentConfidence   Float       @default(0) @map("enrichment_confidence")
+  lastEnrichedAt         DateTime?   @map("last_enriched_at")
+  sourceUrls             String[]    @map("source_urls")
+  source                 String      @default("")
+  searchJobId            String?     @map("search_job_id")
+  searchJob              SearchJob?  @relation(fields: [searchJobId], references: [id])
+  sequenceId             String?     @map("sequence_id")
+  sequenceStep           Int?        @map("sequence_step")
+  zohoCrmSynced          Boolean     @default(false) @map("zoho_crm_synced")
+  zohoLeadId             String?     @map("zoho_lead_id")
+  matchedZohoAccountId   String?     @map("matched_zoho_account_id")
+  matchedZohoAccountName String?     @map("matched_zoho_account_name")
+  createdAt              DateTime    @default(now()) @map("created_at")
+  updatedAt              DateTime    @updatedAt @map("updated_at")
+
+  enrichmentAttempts     EnrichmentAttempt[]
+  eventLogs              EventLog[]
+  inboxThreads           InboxThread[]
+  enrichmentQueue        EnrichmentQueueItem[]
+
+  @@map("leads")
+}
+
+model Company {
+  id               String   @id @default(cuid())
+  name             String
+  domain           String   @unique
+  industry         String   @default("")
+  country          String   @default("")
+  city             String   @default("")
+  employees        Int      @default(0)
+  source           String   @default("")
+  enrichmentStatus String   @default("pending") @map("enrichment_status")
+  contactIds       String[] @map("contact_ids")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("companies")
+}
+
+model ProspectList {
+  id           String   @id @default(cuid())
+  name         String
+  contactCount Int      @default(0) @map("contact_count")
+  source       String   @default("manual")
+  contactIds   String[] @map("contact_ids")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("prospect_lists")
+}
+
+model Identity {
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  smtpHost       String         @default("") @map("smtp_host")
+  dailyLimit     Int            @default(50) @map("daily_limit")
+  sentToday      Int            @default(0) @map("sent_today")
+  warmupProgress Int            @default(0) @map("warmup_progress")
+  status         IdentityStatus @default(warming)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  campaigns      Campaign[]
+
+  @@map("identities")
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  name            String
+  status          CampaignStatus @default(draft)
+  enrolledCount   Int            @default(0) @map("enrolled_count")
+  totalSent       Int            @default(0) @map("total_sent")
+  totalOpened     Int            @default(0) @map("total_opened")
+  totalReplied    Int            @default(0) @map("total_replied")
+  totalBounced    Int            @default(0) @map("total_bounced")
+  identityId      String?        @map("identity_id")
+  identity        Identity?      @relation(fields: [identityId], references: [id])
+  listIds         String[]       @map("list_ids")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  steps           CampaignStep[]
+  inboxThreads    InboxThread[]
+
+  @@map("campaigns")
+}
+
+model CampaignStep {
+  id             String           @id @default(cuid())
+  campaignId     String           @map("campaign_id")
+  campaign       Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  order          Int
+  type           CampaignStepType
+  delayDays      Int              @default(0) @map("delay_days")
+  subject        String           @default("")
+  body           String           @default("")
+  conditionField String?          @map("condition_field")
+  branches       Json?
+  sent           Int              @default(0)
+  opened         Int              @default(0)
+  replied        Int              @default(0)
+  bounced        Int              @default(0)
+
+  @@map("campaign_steps")
+}
+
+model EnrichmentAttempt {
+  id          String           @id @default(cuid())
+  leadId      String           @map("lead_id")
+  lead        Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  provider    String
+  status      EnrichmentStatus @default(pending)
+  confidence  Float            @default(0)
+  fieldsFound String[]         @map("fields_found")
+  payload     Json             @default("{}")
+  timestamp   DateTime         @default(now())
+
+  @@map("enrichment_attempts")
+}
+
+model EventLog {
+  id          String   @id @default(cuid())
+  leadId      String   @map("lead_id")
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type        String
+  description String   @default("")
+  metadata    Json     @default("{}")
+  timestamp   DateTime @default(now())
+
+  @@map("event_logs")
+}
+
+model SuppressionEntry {
+  id       String           @id @default(cuid())
+  type     SuppressionType
+  value    String
+  reason   String           @default("")
+  source   SuppressionSource
+  addedAt  DateTime         @default(now()) @map("added_at")
+
+  @@unique([type, value])
+  @@map("suppression_entries")
+}
+
+model ExclusionRule {
+  id          String  @id @default(cuid())
+  name        String
+  type        String
+  enabled     Boolean @default(true)
+  config      Json    @default("{}")
+  description String  @default("")
+
+  @@map("exclusion_rules")
+}
+
+model InboxThread {
+  id          String      @id @default(cuid())
+  leadId      String      @map("lead_id")
+  lead        Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadName    String      @default("") @map("lead_name")
+  leadCompany String      @default("") @map("lead_company")
+  campaignId  String?     @map("campaign_id")
+  campaign    Campaign?   @relation(fields: [campaignId], references: [id])
+  aiTag       InboxAiTag? @map("ai_tag")
+  unread      Boolean     @default(true)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  messages    InboxMessage[]
+
+  @@map("inbox_threads")
+}
+
+model InboxMessage {
+  id        String           @id @default(cuid())
+  threadId  String           @map("thread_id")
+  thread    InboxThread      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  direction MessageDirection
+  subject   String           @default("")
+  body      String           @default("")
+  timestamp DateTime         @default(now())
+
+  @@map("inbox_messages")
+}
+
+model ActivityItem {
+  id          String   @id @default(cuid())
+  type        String
+  description String   @default("")
+  leadName    String?  @map("lead_name")
+  companyName String?  @map("company_name")
+  timestamp   DateTime @default(now())
+
+  @@map("activity_items")
+}
+
+model AIPlaybook {
+  id                 String   @id @default(cuid())
+  companyName        String   @default("") @map("company_name")
+  website            String   @default("")
+  industry           String   @default("")
+  description        String   @default("")
+  productsServices   String[] @map("products_services")
+  valuePropositions  String[] @map("value_propositions")
+  icpDefinition      String   @default("") @map("icp_definition")
+  competitors        String[]
+  testimonials       String[]
+  aiVariables        Json     @default("{}") @map("ai_variables")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_playbooks")
+}
+
+model EnrichmentQueueItem {
+  id           String   @id @default(cuid())
+  leadId       String   @map("lead_id")
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadName     String   @default("") @map("lead_name")
+  leadCompany  String   @default("") @map("lead_company")
+  leadEmail    String   @default("") @map("lead_email")
+  status       String   @default("queued")
+  provider     String   @default("")
+  priority     String   @default("normal")
+  fieldsFound  String[] @map("fields_found")
+  progress     Int      @default(0)
+  startedAt    DateTime @default(now()) @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  error        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("enrichment_queue")
+}

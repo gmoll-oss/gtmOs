@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { identities, Identity } from "@/lib/mockData";
+import { useState, useEffect } from "react";
+import { useIdentities } from "@/lib/hooks/useData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,12 +31,13 @@ import {
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<
-  Identity["status"],
+  string,
   { label: string; variant: "default" | "secondary" | "outline"; iconColor: string }
 > = {
   active: { label: "Activo", variant: "default", iconColor: "text-green-600 dark:text-green-400" },
   paused: { label: "Pausado", variant: "secondary", iconColor: "text-amber-600 dark:text-amber-400" },
   warming_up: { label: "Calentando", variant: "outline", iconColor: "text-blue-600 dark:text-blue-400" },
+  warming: { label: "Calentando", variant: "outline", iconColor: "text-blue-600 dark:text-blue-400" },
 };
 
 const WARMUP_COLOR = (progress: number) => {
@@ -70,7 +71,9 @@ const EMPTY_FORM: IdentityFormData = {
 };
 
 export default function Identities() {
-  const [identityList, setIdentityList] = useState<Identity[]>([...identities]);
+  const { data: identitiesData = [] } = useIdentities() as { data: any[] };
+  const [identityList, setIdentityList] = useState<any[]>([]);
+  useEffect(() => { if (identitiesData.length > 0 && identityList.length === 0) setIdentityList(identitiesData); }, [identitiesData]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<IdentityFormData>(EMPTY_FORM);
@@ -217,14 +220,14 @@ export default function Identities() {
                     </div>
                   </div>
                   <Badge
-                    variant={STATUS_CONFIG[identity.status].variant}
+                    variant={(STATUS_CONFIG[identity.status] || STATUS_CONFIG.active).variant}
                     className="shrink-0"
                     data-testid={`badge-identity-status-${identity.id}`}
                   >
                     {identity.status === "active" && <CheckCircle className="w-3 h-3 mr-1" />}
                     {identity.status === "paused" && <Pause className="w-3 h-3 mr-1" />}
                     {identity.status === "warming_up" && <Flame className="w-3 h-3 mr-1" />}
-                    {STATUS_CONFIG[identity.status].label}
+                    {(STATUS_CONFIG[identity.status] || STATUS_CONFIG.active).label}
                   </Badge>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -233,7 +236,7 @@ export default function Identities() {
                     <span className="truncate">
                       {identity.smtpHost}:{identity.smtpPort}
                     </span>
-                    <Shield className={`w-3.5 h-3.5 shrink-0 ml-auto ${STATUS_CONFIG[identity.status].iconColor}`} />
+                    <Shield className={`w-3.5 h-3.5 shrink-0 ml-auto ${(STATUS_CONFIG[identity.status] || STATUS_CONFIG.active).iconColor}`} />
                   </div>
 
                   <div className="space-y-1.5">
